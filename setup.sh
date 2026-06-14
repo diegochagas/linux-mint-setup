@@ -78,6 +78,7 @@ sudo apt install -y flatpak
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install -y flathub org.gimp.GIMP
 flatpak install -y flathub org.gimp.GIMP.Plugin.GMic
+flatpak install -y flathub org.gimp.GIMP.Plugin.Resynthesizer
 flatpak install -y flathub com.github.dynobo.normcap
 flatpak install -y flathub com.google.Chrome
 flatpak install -y flathub xyz.riothedev.emojify
@@ -160,6 +161,78 @@ install -m 755 "$AI_PLUGIN_FILE" "$AI_PLUGIN_DIR/$AI_PLUGIN_NAME.py"
 done
 
 rm -rf "$AI_PLUGIN_TEMP_DIR"
+
+# PhotoGIMP for Flatpak GIMP 3.x
+PHOTOGIMP_CONFIG_DIR="$HOME/.config/GIMP/3.0"
+PHOTOGIMP_TEMP_DIR="$(mktemp -d)"
+
+if [ -d "$PHOTOGIMP_CONFIG_DIR" ]; then
+PHOTOGIMP_BACKUP_DIR="$HOME/GIMP-3.0-backup-$(date +%Y%m%d_%H%M%S)"
+cp -a "$PHOTOGIMP_CONFIG_DIR" "$PHOTOGIMP_BACKUP_DIR"
+echo "Existing GIMP 3.0 configuration backed up to $PHOTOGIMP_BACKUP_DIR"
+fi
+
+curl -fsSL https://github.com/Diolinux/PhotoGIMP/releases/download/3.0/PhotoGIMP-linux.zip \
+-o "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip"
+unzip -q "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip" -d "$PHOTOGIMP_TEMP_DIR/photogimp"
+cp -a "$PHOTOGIMP_TEMP_DIR/photogimp/." "$HOME/"
+rm -rf "$PHOTOGIMP_TEMP_DIR"
+
+# SLOS-GIMPainter brushes and presets for GIMP 3.x
+SLOS_INSTALL_DIR="$HOME/.local/share/SLOS-GIMPainter"
+SLOS_TEMP_DIR="$(mktemp -d)"
+SLOS_GIMPRC="$HOME/.config/GIMP/3.0/gimprc"
+
+curl -fsSL https://github.com/SenlinOS/SLOS-GIMPainter/archive/refs/heads/master.zip \
+-o "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip"
+unzip -q "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip" -d "$SLOS_TEMP_DIR"
+rm -rf "$SLOS_INSTALL_DIR"
+mv "$SLOS_TEMP_DIR/SLOS-GIMPainter-master" "$SLOS_INSTALL_DIR"
+rm -rf "$SLOS_TEMP_DIR"
+
+mkdir -p "$(dirname "$SLOS_GIMPRC")"
+touch "$SLOS_GIMPRC"
+
+if ! grep -Fq "$SLOS_INSTALL_DIR" "$SLOS_GIMPRC"; then
+echo "(brush-path-writable \"$SLOS_INSTALL_DIR/brushes\")" >> "$SLOS_GIMPRC"
+echo "(dynamics-path-writable \"$SLOS_INSTALL_DIR/dynamics\")" >> "$SLOS_GIMPRC"
+echo "(tool-preset-path-writable \"$SLOS_INSTALL_DIR/tool-presets\")" >> "$SLOS_GIMPRC"
+fi
+
+# LinuxBeaver GEGL plugins for Flatpak GIMP 3.x
+LINUXBEAVER_PLUGIN_DIR="$HOME/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins"
+LINUXBEAVER_MANIFEST="$HOME/.local/share/LinuxBeaver-GEGL-plugins.manifest"
+LINUXBEAVER_TEMP_DIR="$(mktemp -d)"
+
+mkdir -p "$LINUXBEAVER_PLUGIN_DIR" "$(dirname "$LINUXBEAVER_MANIFEST")"
+
+curl -fsSL https://github.com/LinuxBeaver/LinuxBeaver/releases/download/Gimp_GEGL_Plugin_download_page/LinuxBinaries_all_plugins.zip \
+-o "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip"
+unzip -q "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip" -d "$LINUXBEAVER_TEMP_DIR/extracted"
+
+LINUXBEAVER_PLUGIN_COUNT="$(find "$LINUXBEAVER_TEMP_DIR/extracted" -maxdepth 3 -type f -name '*.so' -print | wc -l)"
+if [ "$LINUXBEAVER_PLUGIN_COUNT" -eq 0 ]; then
+echo "No LinuxBeaver GEGL plugin binaries were found in the downloaded archive."
+exit 1
+fi
+
+if [ -f "$LINUXBEAVER_MANIFEST" ]; then
+while IFS= read -r LINUXBEAVER_PLUGIN_NAME; do
+case "$LINUXBEAVER_PLUGIN_NAME" in
+*/*) ;;
+*.so) rm -f "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME" ;;
+esac
+done < "$LINUXBEAVER_MANIFEST"
+fi
+
+: > "$LINUXBEAVER_MANIFEST"
+while IFS= read -r -d '' LINUXBEAVER_PLUGIN_FILE; do
+LINUXBEAVER_PLUGIN_NAME="$(basename "$LINUXBEAVER_PLUGIN_FILE")"
+install -m 755 "$LINUXBEAVER_PLUGIN_FILE" "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME"
+printf '%s\n' "$LINUXBEAVER_PLUGIN_NAME" >> "$LINUXBEAVER_MANIFEST"
+done < <(find "$LINUXBEAVER_TEMP_DIR/extracted" -maxdepth 3 -type f -name '*.so' -print0)
+
+rm -rf "$LINUXBEAVER_TEMP_DIR"
 
 # Tailscale
 curl -fsSL https://tailscale.com/install.sh | sh
