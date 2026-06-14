@@ -27,10 +27,43 @@ git \
 nodejs \
 npm \
 python3 \
+curl \
+jq \
+unzip \
+xclip \
+libxcb-xinerama0 \
 copyq \
 btop \
 flameshot \
 inkscape
+
+# Remote Mouse and balenaEtcher (official AMD64 downloads)
+if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+REMOTE_MOUSE_DIR="$(mktemp -d)"
+curl -fsSL https://www.remotemouse.net/downloads/linux/RemoteMouse_x86_64.zip -o "$REMOTE_MOUSE_DIR/remotemouse.zip"
+unzip -q "$REMOTE_MOUSE_DIR/remotemouse.zip" -d "$REMOTE_MOUSE_DIR/app"
+sudo install -d /opt/remotemouse
+sudo cp -a "$REMOTE_MOUSE_DIR/app/." /opt/remotemouse/
+sudo ln -sf /opt/remotemouse/RemoteMouse /usr/local/bin/RemoteMouse
+sudo tee /usr/share/applications/remotemouse.desktop > /dev/null << EOF
+[Desktop Entry]
+Type=Application
+Name=Remote Mouse
+Exec=RemoteMouse
+Icon=input-mouse
+Terminal=false
+Categories=Utility;Network;
+EOF
+rm -rf "$REMOTE_MOUSE_DIR"
+
+ETCHER_DEB="$(mktemp --suffix=.deb)"
+ETCHER_DEB_URL="$(curl -fsSL https://api.github.com/repos/balena-io/etcher/releases/latest | jq -r '.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url' | head -n 1)"
+curl -fsSL "$ETCHER_DEB_URL" -o "$ETCHER_DEB"
+sudo apt install -y "$ETCHER_DEB"
+rm -f "$ETCHER_DEB"
+else
+echo "Skipping Remote Mouse and balenaEtcher: official Linux downloads require AMD64."
+fi
 
 # Snap packages
 sudo apt install -y snapd
@@ -47,6 +80,7 @@ flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flat
 flatpak install -y flathub com.github.dynobo.normcap
 flatpak install -y flathub com.google.Chrome
 flatpak install -y flathub io.github.vemonet.EmojiMart
+flatpak install -y flathub dev.nicx.mimick
 
 # Tailscale
 curl -fsSL https://tailscale.com/install.sh | sh
