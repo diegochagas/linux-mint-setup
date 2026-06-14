@@ -66,7 +66,7 @@ fi
 # Keyboard shortcuts
 dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/name "'Flameshot'"
 dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/command "'flameshot gui'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding "['<Shift><Super>s']"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding "['<Ctrl><Super>s']"
 
 dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/name "'CopyQ Toggle'"
 dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/command "'copyq toggle'"
