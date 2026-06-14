@@ -68,7 +68,7 @@ fi
 # Snap packages
 sudo apt install -y snapd
 sudo snap install surfshark
-sudo snap install franz
+flatpak install -y flathub re.sonny.Tangram
 sudo snap install code --classic
 sudo snap install insomnia
 sudo snap install localsend

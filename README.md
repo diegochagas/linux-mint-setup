@@ -57,7 +57,7 @@ actions:
 The script installs Snap support and then installs:
 
 - Surfshark
-- Franz
+- Tangram
 - Visual Studio Code
 - Insomnia
 - LocalSend
