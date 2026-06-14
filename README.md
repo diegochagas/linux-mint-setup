@@ -57,7 +57,6 @@ actions:
 The script installs Snap support and then installs:
 
 - Surfshark
-- GIMP
 - Franz
 - Visual Studio Code
 - Insomnia
@@ -67,10 +66,29 @@ The script installs Snap support and then installs:
 
 The script installs Flatpak, adds Flathub, and installs:
 
+- [GIMP](https://www.gimp.org)
+- [G'MIC-Qt plug-in for GIMP 3](https://github.com/flathub/org.gimp.GIMP.Plugin.GMic)
 - NormCap
 - Google Chrome
-- EmojiMart
+- Emojify
 - Mimick
+
+### GIMP AI Remove Background Plug-in
+
+The script also installs the
+[AI Remove Background for GIMP 3](https://github.com/galixstroyer/ai-remove-background-g3)
+plug-in:
+
+- Installs `rembg` and `onnxruntime` inside the Flatpak GIMP Python environment.
+- Patches the plug-in to use Flatpak's Python and its installed packages.
+- Installs the plug-in for Flatpak GIMP 3.2 and the GIMP 3.2/3.0 user config
+  directories.
+- Grants Flatpak GIMP access to the home directory so the plug-in can process
+  files there.
+
+After restarting GIMP, use the plug-in from
+`Filters > AI > AI Remove Background`. Its first run downloads an AI model of
+approximately 176 MB.
 
 ### Other Software
 
@@ -86,10 +104,10 @@ The script creates these Cinnamon keyboard shortcuts:
 
 | Shortcut | Action |
 | --- | --- |
-| `Ctrl + Super + S` | Open Flameshot |
-| `Super + V` | Toggle CopyQ |
-| `Ctrl + Shift + S` | Open NormCap |
-| `Ctrl + Shift + Space` | Open EmojiMart |
+| `Alt + S` | Open Flameshot |
+| `Alt + V` | Toggle CopyQ |
+| `Alt + T` | Open NormCap |
+| `Alt + E` | Open Emojify |
 
 It also:
 
@@ -100,6 +118,11 @@ It also:
 ## Notes
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
+- The AI Remove Background installation patches the current upstream plug-in.
+  If its code structure changes, the setup stops instead of installing a
+  potentially broken patch.
+- Flatpak GIMP receives access to the entire home directory through
+  `flatpak override --user org.gimp.GIMP --filesystem=home`.
 - The script downloads software and runs official third-party installation
   scripts, so review `setup.sh` before running it.
 - Some operations may already be complete when the script is run again. Review
