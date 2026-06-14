@@ -46,6 +46,7 @@ if [ -f /etc/apt/preferences.d/nosnap.pref ]; then
                                                     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
                                                     flatpak install -y flathub com.github.dynobo.normcap
                                                     flatpak install -y flathub com.google.Chrome
+                                                    flatpak install -y flathub xyz.riothedev.emojify
 
                                                     # Tailscale
                                                     curl -fsSL https://tailscale.com/install.sh | sh
@@ -75,7 +76,11 @@ if [ -f /etc/apt/preferences.d/nosnap.pref ]; then
                                                                                 dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/command "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'"
                                                                                 dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/binding "['<Shift><Primary>s']"
 
-                                                                                dconf write /org/cinnamon/desktop/keybindings/custom-list "['custom0', 'custom1', 'custom2']"
+                                                                                dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom3/name "'Emojify'"
+                                                                                dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom3/command "'/usr/bin/flatpak run xyz.riothedev.emojify'"
+                                                                                dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom3/binding "['<Primary><Shift>space']"
+
+                                                                                dconf write /org/cinnamon/desktop/keybindings/custom-list "['custom0', 'custom1', 'custom2', 'custom3']"
 
                                                                                 # CopyQ autostart
                                                                                 mkdir -p ~/.config/autostart
