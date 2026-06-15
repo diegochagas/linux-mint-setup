@@ -221,3 +221,15 @@ It also:
 - Some operations may already be complete when the script is run again. Review
   any errors before retrying.
 - Type the cedilla character (`ç`) with `AltGr + ,` (comma).
+
+
+## ZimaOS Apps
+
+The following apps are installed on ZimaOS, a personal NAS/home server operating system:
+
+- **Immich** – Self-hosted photo and video backup and management solution.
+- **Jellyfin** – Open-source media server for streaming movies, music, and TV shows.
+- **Nextcloud** – Self-hosted cloud platform for file sync, sharing, and collaboration.
+- **Pi-hole** – Network-wide DNS-based ad blocker.
+- **Tailscale** – VPN mesh network for secure remote access to the NAS.
+- **Vaultwarden** – Lightweight, self-hosted Bitwarden-compatible password manager server.
