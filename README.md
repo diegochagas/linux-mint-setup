@@ -57,7 +57,6 @@ actions:
 The script installs Snap support and then installs:
 
 - Surfshark
-- Tangram
 - Visual Studio Code
 - Insomnia
 - LocalSend
@@ -69,6 +68,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - [GIMP](https://www.gimp.org)
 - [G'MIC-Qt plug-in for GIMP 3](https://github.com/flathub/org.gimp.GIMP.Plugin.GMic)
 - [Resynthesizer plug-in for GIMP 3](https://github.com/bootchk/resynthesizer)
+- [Tangram](https://github.com/sonnyp/Tangram)
 - NormCap
 - Google Chrome
 - Emojify
@@ -150,6 +150,29 @@ After restarting GIMP, find the effects under menus such as
 `Filters > Text Styling`, `Filters > Render > Fun`, and
 `Filters > GEGL Operation`.
 
+### GIMP AI Plugin
+
+The script installs the
+[GIMP AI Plugin](https://github.com/lukaso/gimp-ai) by lukaso into the active
+Flatpak GIMP configuration directory. The plugin requires an OpenAI API key.
+
+The version subfolder is detected automatically (preferring the latest stable
+even-numbered release). Plugin files are installed to the real
+`$HOME/.config/GIMP/<version>/plug-ins/gimp-ai-plugin/` path, which is what
+the Flatpak sandbox reads.
+
+If the GIMP configuration directory does not exist when the script runs (because
+GIMP has not been opened yet), installation is skipped with a warning. Open
+GIMP once, close it, and re-run `setup.sh` to complete the installation.
+
+After restarting GIMP, find the plugin under `Filters > AI`:
+
+- **Inpainting** — fill a selected area with AI-generated content.
+- **Image Generator** — generate a new image from a text prompt.
+- **Layer Composite** — blend layers together using AI.
+
+Configure your OpenAI API key via `Filters > AI > Settings`.
+
 ### Other Software
 
 - Installs Tailscale using its official installation script.
@@ -187,6 +210,10 @@ It also:
   GIMP configuration files. Existing GIMP 3.0 configuration is backed up first.
 - SLOS-GIMPainter is applied after PhotoGIMP so its resource paths remain
   registered in GIMP's configuration.
+- The GIMP AI Plugin requires an OpenAI API key. Set it in GIMP via
+  `Filters > AI > Settings` after installation.
+- If GIMP has not been opened before the setup script runs, the GIMP AI Plugin
+  installation is skipped. Open GIMP once, close it, and re-run `setup.sh`.
 - The GEGL plug-in directory must contain only `.so` files at its top level.
   Subdirectories or other file types may prevent GIMP from starting.
 - The script downloads software and runs official third-party installation

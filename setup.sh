@@ -234,6 +234,41 @@ done < <(find "$LINUXBEAVER_TEMP_DIR/extracted" -maxdepth 3 -type f -name '*.so'
 
 rm -rf "$LINUXBEAVER_TEMP_DIR"
 
+# GIMP AI Plugin for Flatpak GIMP 3.x (OpenAI-powered: Inpainting, Image Generator, etc.)
+GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
+    "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
+    | tr ' ' '\n' | sort -V -r | while IFS= read -r ver; do
+        minor=$(echo "$ver" | cut -d. -f2)
+        [ -n "$minor" ] && [ "$(( minor % 2 ))" -eq 0 ] && echo "$ver" && break
+    done)
+if [ -z "$GIMP_AI_DETECTED_VERSION" ]; then
+    GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
+        "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
+        | tr ' ' '\n' | sort -V | tail -1)
+fi
+
+if [ -z "$GIMP_AI_DETECTED_VERSION" ]; then
+    echo "GIMP config directory not found — open GIMP once after setup, then re-run to install the GIMP AI Plugin."
+else
+    GIMP_AI_PLUGIN_DIR="$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin"
+    GIMP_AI_TEMP_DIR=$(mktemp -d)
+    GIMP_AI_TAG=$(curl -fsSL https://api.github.com/repos/lukaso/gimp-ai/releases/latest \
+        | jq -r '.tag_name')
+    GIMP_AI_ZIP_URL="https://github.com/lukaso/gimp-ai/releases/download/${GIMP_AI_TAG}/gimp-ai-plugin-${GIMP_AI_TAG}.zip"
+    curl -fsSL "$GIMP_AI_ZIP_URL" -o "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip"
+    unzip -q "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip" -d "$GIMP_AI_TEMP_DIR/extracted"
+    mkdir -p "$GIMP_AI_PLUGIN_DIR"
+    find "$GIMP_AI_TEMP_DIR/extracted" -name "gimp-ai-plugin.py" \
+        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
+    find "$GIMP_AI_TEMP_DIR/extracted" -name "coordinate_utils.py" \
+        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
+    chmod +x "$GIMP_AI_PLUGIN_DIR/gimp-ai-plugin.py"
+    chmod +x "$GIMP_AI_PLUGIN_DIR/coordinate_utils.py"
+    find "$HOME/.var/app/org.gimp.GIMP/" -name "pluginrc" -delete 2>/dev/null || true
+    find "$HOME/.config/GIMP/" -name "pluginrc" -delete 2>/dev/null || true
+    rm -rf "$GIMP_AI_TEMP_DIR"
+fi
+
 # Tailscale
 curl -fsSL https://tailscale.com/install.sh | sh
 
