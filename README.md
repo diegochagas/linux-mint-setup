@@ -200,15 +200,9 @@ It also:
 
 The following apps are installed on ZimaOS, a personal NAS/home server operating system:
 
-- **App Store** – Browse and install apps directly on ZimaOS.
-- **Backup** – Create and manage backups of your data.
-- **Files** – File manager to browse and organize files stored on the NAS.
 - **Immich** – Self-hosted photo and video backup and management solution.
 - **Jellyfin** – Open-source media server for streaming movies, music, and TV shows.
 - **Nextcloud** – Self-hosted cloud platform for file sync, sharing, and collaboration.
-- **PeerDrop** – Local network file sharing between devices.
 - **Pi-hole** – Network-wide DNS-based ad blocker.
-- **Settings** – ZimaOS system settings and configuration panel.
 - **Tailscale** – VPN mesh network for secure remote access to the NAS.
 - **Vaultwarden** – Lightweight, self-hosted Bitwarden-compatible password manager server.
-- **ZVM** – ZimaOS Virtual Machine manager for running VMs on the NAS.
