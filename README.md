@@ -36,7 +36,8 @@ permissions. Keep an internet connection active while it runs.
 3. Install the fonts located in the `Softwares` folder.
 4. Configure automatic system snapshots:
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
-   Weekly - Keep 4 > Next > Next > Finish`.
+Weekly - Keep 4 > Next > Next > Finish`.
+5. Download and install [AnyDesk](https://anydesk.com/en/downloads/linux) (amd64)
 
 ## What `setup.sh` Does
 
@@ -185,13 +186,13 @@ Configure your OpenAI API key via `Filters > AI > Settings`.
 
 The script creates these Cinnamon keyboard shortcuts:
 
-| Shortcut | Action |
-| --- | --- |
-| `Alt + V` | Toggle CopyQ |
-| `Alt + T` | Open NormCap |
-| `Alt + E` | Open Emojify |
+| Shortcut  | Action                                    |
+| --------- | ----------------------------------------- |
+| `Alt + V` | Toggle CopyQ                              |
+| `Alt + T` | Open NormCap                              |
+| `Alt + E` | Open Emojify                              |
 | `Alt + C` | Copy a screenshot of an area to clipboard |
-| `F8` | Copy a screenshot to clipboard |
+| `F8`      | Copy a screenshot to clipboard            |
 
 It also:
 
@@ -222,7 +223,6 @@ It also:
 - Some operations may already be complete when the script is run again. Review
   any errors before retrying.
 - Type the cedilla character (`ç`) with `AltGr + ,` (comma).
-
 
 ## ZimaOS Apps
 
