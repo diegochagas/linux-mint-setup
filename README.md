@@ -49,7 +49,7 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
-  unzip, xclip, CopyQ, btop, Flameshot, Inkscape, and supporting libraries.
+  unzip, xclip, CopyQ, btop, Inkscape, and supporting libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 
 ### Snap Applications
@@ -187,10 +187,11 @@ The script creates these Cinnamon keyboard shortcuts:
 
 | Shortcut | Action |
 | --- | --- |
-| `Alt + S` | Open Flameshot |
 | `Alt + V` | Toggle CopyQ |
 | `Alt + T` | Open NormCap |
 | `Alt + E` | Open Emojify |
+| `Alt + C` | Copy a screenshot of an area to clipboard |
+| `F8` | Copy a screenshot to clipboard |
 
 It also:
 

@@ -34,7 +34,6 @@ xclip \
 libxcb-xinerama0 \
 copyq \
 btop \
-flameshot \
 inkscape
 
 # Remote Mouse and balenaEtcher (official AMD64 downloads)
@@ -285,23 +284,23 @@ sudo mv libgobject* oldlibs/ 2>/dev/null || true
 fi
 
 # Keyboard shortcuts
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/name "'Flameshot'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/command "'flameshot gui'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding "['<Alt>s']"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/name "'CopyQ Toggle'"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/command "'copyq toggle'"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding "['<Alt>v']"
 
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/name "'CopyQ Toggle'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/command "'copyq toggle'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/binding "['<Alt>v']"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/name "'NormCap'"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/command "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/binding "['<Alt>t']"
 
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/name "'NormCap'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/command "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/binding "['<Alt>t']"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/name "'Emojify'"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/command "'/usr/bin/flatpak run xyz.riothedev.emojify'"
+dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/binding "['<Alt>e']"
 
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom3/name "'Emojify'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom3/command "'/usr/bin/flatpak run xyz.riothedev.emojify'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom3/binding "['<Alt>e']"
+dconf write /org/cinnamon/desktop/keybindings/custom-list "['custom0', 'custom1', 'custom2']"
 
-dconf write /org/cinnamon/desktop/keybindings/custom-list "['custom0', 'custom1', 'custom2', 'custom3']"
+# Built-in screenshot shortcuts
+dconf write /org/cinnamon/desktop/keybindings/media-keys/area-screenshot-clip "['<Alt>c']"
+dconf write /org/cinnamon/desktop/keybindings/media-keys/screenshot-clip "['F8']"
 
 # CopyQ autostart
 mkdir -p ~/.config/autostart
