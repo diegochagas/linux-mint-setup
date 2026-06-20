@@ -50,7 +50,8 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
-  unzip, xclip, CopyQ, btop, Inkscape, and supporting libraries.
+  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, and supporting
+  libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 
 ### Snap Applications
