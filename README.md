@@ -225,96 +225,63 @@ It also:
 
 ### Fixing Random Wi-Fi Disconnects on Linux Mint (MediaTek MT7921)
 
-1. Check your Wi-Fi adapter:
+- Check your Wi-Fi adapter:
+  ```bash
+  lspci -nnk | grep -A3 -i network
+  ```
+  If you see something similar to:
+  ```text
+  MediaTek Corp. MT7921 802.11ax PCI Express Wireless Network Adapter
+  Kernel driver in use: mt7921e
+  ```
+  then this guide applies.
+- Install the `iw` utility, if it is not already installed:
+  ```bash
+  sudo apt update
+  sudo apt install iw
+  ```
+- Check the current power-saving status:
+  ```bash
+  iw dev wlp63s0 get power_save
+  ```
+  You may see:
+  ```text
+  Power save: on
+  ```
+- Disable Wi-Fi power saving permanently.
+  Create the NetworkManager configuration file:
+  ```bash
+  sudo mkdir -p /etc/NetworkManager/conf.d
+  sudo nano /etc/NetworkManager/conf.d/wifi-powersave.conf
+  ```
+  Paste the following:
+  ```ini
+  [connection]
+  wifi.powersave = 2
+  ```
+  Save and exit with `Ctrl+O`, `Enter`, then `Ctrl+X`.
+- Restart NetworkManager:
+  ```bash
+  sudo systemctl restart NetworkManager
+  ```
+- Verify that power saving is disabled:
+  ```bash
+  iw dev wlp63s0 get power_save
+  ```
+  Expected output:
+  ```text
+  Power save: off
+  ```
+- Reboot and verify again:
+  ```bash
+  iw dev wlp63s0 get power_save
+  ```
+  If it still shows `Power save: off`, the configuration has been applied
+  successfully and should persist across reboots.
+  After disabling Wi-Fi power saving, the random network drops stopped occurring
+  on the MediaTek MT7921 adapter under Linux Mint.
 
-   ```bash
-   lspci -nnk | grep -A3 -i network
-   ```
-
-   If you see something similar to:
-
-   ```text
-   MediaTek Corp. MT7921 802.11ax PCI Express Wireless Network Adapter
-   Kernel driver in use: mt7921e
-   ```
-
-   then this guide applies.
-
-2. Install the `iw` utility, if it is not already installed:
-
-   ```bash
-   sudo apt update
-   sudo apt install iw
-   ```
-
-3. Check the current power-saving status:
-
-   ```bash
-   iw dev wlp63s0 get power_save
-   ```
-
-   You may see:
-
-   ```text
-   Power save: on
-   ```
-
-4. Disable Wi-Fi power saving permanently.
-
-   Create the NetworkManager configuration file:
-
-   ```bash
-   sudo mkdir -p /etc/NetworkManager/conf.d
-   sudo nano /etc/NetworkManager/conf.d/wifi-powersave.conf
-   ```
-
-   Paste the following:
-
-   ```ini
-   [connection]
-   wifi.powersave = 2
-   ```
-
-   Save and exit with `Ctrl+O`, `Enter`, then `Ctrl+X`.
-
-5. Restart NetworkManager:
-
-   ```bash
-   sudo systemctl restart NetworkManager
-   ```
-
-6. Verify that power saving is disabled:
-
-   ```bash
-   iw dev wlp63s0 get power_save
-   ```
-
-   Expected output:
-
-   ```text
-   Power save: off
-   ```
-
-7. Reboot and verify again:
-
-   ```bash
-   iw dev wlp63s0 get power_save
-   ```
-
-   If it still shows `Power save: off`, the configuration has been applied
-   successfully and should persist across reboots.
-
-After disabling Wi-Fi power saving, the random network drops stopped occurring
-on the MediaTek MT7921 adapter under Linux Mint.
-
-### Other Notes
-
-- Remote Mouse and balenaEtcher are installed only on AMD64 systems.
-- Some operations may already be complete when the script is run again. Review
-  any errors before retrying.
-- Type the cedilla character (`ç`) with `AltGr + ,` (comma).
-
-## ZimaOS Apps
+### ZimaOS Apps
 
 The following apps are installed on ZimaOS, a personal NAS/home server operating system:
 
@@ -324,3 +291,10 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 - **Pi-hole** – Network-wide DNS-based ad blocker.
 - **Tailscale** – VPN mesh network for secure remote access to the NAS.
 - **Vaultwarden** – Lightweight, self-hosted Bitwarden-compatible password manager server.
+
+### Other Notes
+
+- Remote Mouse and balenaEtcher are installed only on AMD64 systems.
+- Some operations may already be complete when the script is run again. Review
+  any errors before retrying.
+- Type the cedilla character (`ç`) with `AltGr + ,` (comma).
