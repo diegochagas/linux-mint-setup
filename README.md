@@ -74,6 +74,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - NormCap
 - Google Chrome
 - Emojify
+- Master PDF Editor
 
 ### GIMP Resynthesizer Plug-in
 
