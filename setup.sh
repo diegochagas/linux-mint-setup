@@ -82,7 +82,6 @@ flatpak install -y flathub org.gimp.GIMP.Plugin.Resynthesizer
 flatpak install -y flathub com.github.dynobo.normcap
 flatpak install -y flathub com.google.Chrome
 flatpak install -y flathub xyz.riothedev.emojify
-flatpak install -y flathub dev.nicx.mimick
 
 # AI Remove Background plugin for Flatpak GIMP 3.2
 AI_PLUGIN_NAME="ai-remove-background-g3"

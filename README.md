@@ -74,7 +74,6 @@ The script installs Flatpak, adds Flathub, and installs:
 - NormCap
 - Google Chrome
 - Emojify
-- Mimick
 
 ### GIMP Resynthesizer Plug-in
 
@@ -285,6 +284,7 @@ It also:
 
 The following apps are installed on ZimaOS, a personal NAS/home server operating system:
 
+- **Cloudflared** – Cloudflare Tunnel client for secure outbound access to self-hosted services.
 - **Immich** – Self-hosted photo and video backup and management solution.
 - **Jellyfin** – Open-source media server for streaming movies, music, and TV shows.
 - **Nextcloud** – Self-hosted cloud platform for file sync, sharing, and collaboration.
