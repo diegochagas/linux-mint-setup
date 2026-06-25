@@ -35,7 +35,8 @@ libxcb-xinerama0 \
 copyq \
 btop \
 inkscape \
-nextcloud-desktop
+nextcloud-desktop \
+ffmpeg
 
 # Remote Mouse and balenaEtcher (official AMD64 downloads)
 if [ "$(dpkg --print-architecture)" = "amd64" ]; then

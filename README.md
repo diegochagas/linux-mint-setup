@@ -50,7 +50,7 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
-  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, and supporting
+  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, FFmpeg, and supporting
   libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 
@@ -299,3 +299,4 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 - Some operations may already be complete when the script is run again. Review
   any errors before retrying.
 - Type the cedilla character (`ç`) with `AltGr + ,` (comma).
+- The correct audio profile in Sound Settings is `Headset JBL TUNE770NC`.
