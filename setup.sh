@@ -66,6 +66,34 @@ else
 echo "Skipping Remote Mouse and balenaEtcher: official Linux downloads require AMD64."
 fi
 
+# immich-go
+case "$(dpkg --print-architecture)" in
+amd64) IMMICH_GO_ARCH="x86_64" ;;
+arm64) IMMICH_GO_ARCH="arm64" ;;
+*) IMMICH_GO_ARCH="" ;;
+esac
+
+if [ -n "$IMMICH_GO_ARCH" ]; then
+IMMICH_GO_DIR="$(mktemp -d)"
+IMMICH_GO_URL="$(curl -fsSL https://api.github.com/repos/simulot/immich-go/releases/latest | jq -r ".assets[] | select(.name == \"immich-go_Linux_${IMMICH_GO_ARCH}.tar.gz\") | .browser_download_url" | head -n 1)"
+if [ -z "$IMMICH_GO_URL" ]; then
+echo "No immich-go Linux $IMMICH_GO_ARCH release asset was found."
+exit 1
+fi
+curl -fsSL "$IMMICH_GO_URL" -o "$IMMICH_GO_DIR/immich-go.tar.gz"
+mkdir -p "$IMMICH_GO_DIR/extracted"
+tar -xzf "$IMMICH_GO_DIR/immich-go.tar.gz" -C "$IMMICH_GO_DIR/extracted"
+IMMICH_GO_BINARY="$(find "$IMMICH_GO_DIR/extracted" -type f -name immich-go -print -quit)"
+if [ -z "$IMMICH_GO_BINARY" ]; then
+echo "immich-go binary was not found in the downloaded archive."
+exit 1
+fi
+sudo install -m 755 "$IMMICH_GO_BINARY" /usr/local/bin/immich-go
+rm -rf "$IMMICH_GO_DIR"
+else
+echo "Skipping immich-go: Linux $(dpkg --print-architecture) release asset is not configured."
+fi
+
 # Snap packages
 sudo apt install -y snapd
 sudo snap install surfshark
@@ -302,7 +330,7 @@ dconf write /org/cinnamon/desktop/keybindings/custom-list "['custom0', 'custom1'
 
 # Built-in screenshot shortcuts
 dconf write /org/cinnamon/desktop/keybindings/media-keys/area-screenshot-clip "['<Alt>c']"
-dconf write /org/cinnamon/desktop/keybindings/media-keys/screenshot-clip "['F8']"
+dconf write /org/cinnamon/desktop/keybindings/media-keys/screenshot-clip "['<Shift><Super>s']"
 
 # CopyQ autostart
 mkdir -p ~/.config/autostart

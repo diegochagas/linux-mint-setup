@@ -53,6 +53,7 @@ actions:
   unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, FFmpeg, and supporting
   libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
+- On AMD64 and ARM64 systems, installs the latest `immich-go` release.
 
 ### Snap Applications
 
@@ -178,6 +179,8 @@ Configure your OpenAI API key via `Filters > AI > Settings`.
 ### Other Software
 
 - Installs Tailscale using its official installation script.
+- Installs [`immich-go`](https://github.com/simulot/immich-go) to
+  `/usr/local/bin/immich-go` on AMD64 and ARM64 systems.
 - Installs DaVinci Resolve when its installer is found at the path described in
   Step 1.
 - Moves selected bundled DaVinci Resolve libraries into
@@ -187,13 +190,13 @@ Configure your OpenAI API key via `Filters > AI > Settings`.
 
 The script creates these Cinnamon keyboard shortcuts:
 
-| Shortcut  | Action                                    |
-| --------- | ----------------------------------------- |
-| `Alt + V` | Toggle CopyQ                              |
-| `Alt + T` | Open NormCap                              |
-| `Alt + E` | Open Emojify                              |
-| `Alt + C` | Copy a screenshot of an area to clipboard |
-| `F8`      | Copy a screenshot to clipboard            |
+| Shortcut            | Action                                    |
+| ------------------- | ----------------------------------------- |
+| `Alt + V`           | Toggle CopyQ                              |
+| `Alt + T`           | Open NormCap                              |
+| `Alt + E`           | Open Emojify                              |
+| `Alt + C`           | Copy a screenshot of an area to clipboard |
+| `Shift + Super + S` | Copy a screenshot to clipboard            |
 
 It also:
 
@@ -296,7 +299,9 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 ### Other Notes
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
+- `immich-go` is installed only on AMD64 and ARM64 systems.
 - Some operations may already be complete when the script is run again. Review
   any errors before retrying.
 - Type the cedilla character (`ç`) with `AltGr + ,` (comma).
 - The correct audio profile in Sound Settings is `Headset JBL TUNE770NC`.
+- Install Python packages only for your user with `python3 -m pip install --user --break-system-packages PACKAGE_NAME`
