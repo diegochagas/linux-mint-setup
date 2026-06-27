@@ -50,7 +50,7 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
-  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, FFmpeg, GParted, and supporting
+  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, FFmpeg, GParted, Tree, and supporting
   libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.

@@ -37,7 +37,8 @@ btop \
 inkscape \
 nextcloud-desktop \
 ffmpeg \
-gparted
+gparted \
+tree
 
 # Remote Mouse and balenaEtcher (official AMD64 downloads)
 if [ "$(dpkg --print-architecture)" = "amd64" ]; then
