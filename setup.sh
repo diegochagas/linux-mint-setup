@@ -707,7 +707,7 @@ install_flatpak_packages() {
     install_flatpak_package com.github.dynobo.normcap
     install_flatpak_package com.google.Chrome
     install_flatpak_package xyz.riothedev.emojify
-    install_flatpak_package net.codeindustry.MasterPDFEditor
+    install_flatpak_package net.code_industry.MasterPDFEditor
 
     SUMMARY+=("Flatpak Packages|$INSTALLATION_MESSAGE")
 }
@@ -815,27 +815,41 @@ PYEOF
 install_photogimp() {
     print_step "Installing PhotoGIMP"
 
-    if file_exists "$HOME/.config/GIMP/3.0/menurc"; then
-        print_info "⏭️ PhotoGIMP already installed"
-        SUMMARY+=("PhotoGIMP|⏭️ Already installed")
-        return
-    fi
-    
+    local PHOTOGIMP_VERSION="3.0"
+    local PHOTOGIMP_MARKER="$HOME/.config/GIMP/.photogimp-installed"
     local PHOTOGIMP_CONFIG_DIR="$HOME/.config/GIMP/3.0"
     local PHOTOGIMP_TEMP_DIR
     PHOTOGIMP_TEMP_DIR="$(mktemp -d)"
 
+    if file_exists "$PHOTOGIMP_MARKER"; then
+        print_info "⏭️ PhotoGIMP already installed"
+        SUMMARY+=("PhotoGIMP|⏭️ Already installed")
+        return
+    fi
+
     if [[ -d "$PHOTOGIMP_CONFIG_DIR" ]]; then
         local PHOTOGIMP_BACKUP_DIR
         PHOTOGIMP_BACKUP_DIR="$HOME/GIMP-3.0-backup-$(date +%Y%m%d_%H%M%S)"
+
         run cp -a "$PHOTOGIMP_CONFIG_DIR" "$PHOTOGIMP_BACKUP_DIR"
+
         print_info "Existing GIMP 3.0 configuration backed up to $PHOTOGIMP_BACKUP_DIR"
     fi
 
-    run curl -fsSL https://github.com/Diolinux/PhotoGIMP/releases/download/3.0/PhotoGIMP-linux.zip \
-    -o "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip"
-    run unzip -q "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip" -d "$PHOTOGIMP_TEMP_DIR/photogimp"
+    run curl -fsSL \
+        "https://github.com/Diolinux/PhotoGIMP/releases/download/3.0/PhotoGIMP-linux.zip" \
+        -o "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip"
+
+    run unzip -q \
+        "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip" \
+        -d "$PHOTOGIMP_TEMP_DIR/photogimp"
+
     run cp -a "$PHOTOGIMP_TEMP_DIR/photogimp/." "$HOME/"
+
+    run mkdir -p "$(dirname "$PHOTOGIMP_MARKER")"
+
+    run bash -c "echo '$PHOTOGIMP_VERSION' > '$PHOTOGIMP_MARKER'"
+
     run rm -rf "$PHOTOGIMP_TEMP_DIR"
 
     SUMMARY+=("PhotoGIMP|$INSTALLATION_MESSAGE")
