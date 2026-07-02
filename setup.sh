@@ -306,12 +306,10 @@ check_dependencies() {
     local dependencies=(
         curl
         wget
-        git
-        jq
-        unzip
         tar
-        gsettings
-        dconf
+        sudo
+        apt
+        dpkg
     )
 
     local missing=()
