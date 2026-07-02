@@ -1185,26 +1185,30 @@ EOF
 configure_update_manager() {
     print_step "Configuring Update Manager"
 
-    local current_show_unverified
-    local current_auto_update
-    local current_auto_refresh
+    local current_allow_unverified
+    local current_refresh_schedule
+    local current_auto_update_flatpaks
+    local current_auto_update_spices
 
-    current_show_unverified="$(gsettings get com.linuxmint.install show-unverified 2>/dev/null || true)"
-    current_auto_update="$(gsettings get com.linuxmint.updates auto-update 2>/dev/null || true)"
-    current_auto_refresh="$(gsettings get com.linuxmint.updates auto-refresh 2>/dev/null || true)"
+    current_allow_unverified="$(gsettings get com.linuxmint.install allow-unverified-flatpaks)"
+    current_refresh_schedule="$(gsettings get com.linuxmint.updates refresh-schedule-enabled)"
+    current_auto_update_flatpaks="$(gsettings get com.linuxmint.updates auto-update-flatpaks)"
+    current_auto_update_spices="$(gsettings get com.linuxmint.updates auto-update-cinnamon-spices)"
 
-    if values_match "$current_show_unverified" "true" &&
-       values_match "$current_auto_update" "true" &&
-       values_match "$current_auto_refresh" "true"
+    if values_match "$current_allow_unverified" "true" &&
+       values_match "$current_refresh_schedule" "true" &&
+       values_match "$current_auto_update_flatpaks" "true" &&
+       values_match "$current_auto_update_spices" "true"
     then
         print_info "⏭️ Update Manager already configured"
         SUMMARY+=("Update Manager|⏭️ Already configured")
         return
     fi
 
-    run gsettings set com.linuxmint.install show-unverified true
-    run gsettings set com.linuxmint.updates auto-update true
-    run gsettings set com.linuxmint.updates auto-refresh true
+    run gsettings set com.linuxmint.install allow-unverified-flatpaks true
+    run gsettings set com.linuxmint.updates refresh-schedule-enabled true
+    run gsettings set com.linuxmint.updates auto-update-flatpaks true
+    run gsettings set com.linuxmint.updates auto-update-cinnamon-spices true
 
     SUMMARY+=("Update Manager|$CONFIGURATION_MESSAGE")
 }
