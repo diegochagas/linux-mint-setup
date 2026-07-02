@@ -846,6 +846,8 @@ install_photogimp() {
 
     run cp -a "$PHOTOGIMP_TEMP_DIR/photogimp/." "$HOME/"
 
+    print_info "Creating PhotoGIMP marker..."
+
     run mkdir -p "$(dirname "$PHOTOGIMP_MARKER")"
 
     run bash -c "echo '$PHOTOGIMP_VERSION' > '$PHOTOGIMP_MARKER'"
