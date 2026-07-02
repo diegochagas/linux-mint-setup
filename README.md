@@ -29,15 +29,13 @@ permissions. Keep an internet connection active while it runs.
 
 ## Step 3 - Manual Post-Install Steps
 
-1. Install the GIMP plugins described in the
-   [DioLinux guide](https://diolinux.com.br/design/como-instalar-plugins-no-gimp.html).
-2. Install Claude Desktop for Linux by following the instructions in the
+1. Install Claude Desktop for Linux by following the instructions in the
    [claude-desktop-debian repository](https://github.com/aaddrick/claude-desktop-debian).
-3. Install the fonts located in the `Softwares` folder.
-4. Configure automatic system snapshots:
+2. Install the fonts located in the `Softwares` folder.
+3. Configure automatic system snapshots:
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
 Weekly - Keep 4 > Next > Next > Finish`.
-5. Download and install [AnyDesk](https://anydesk.com/en/downloads/linux) (amd64)
+4. Download and install [AnyDesk](https://anydesk.com/en/downloads/linux) (amd64)
 
 ## What `setup.sh` Does
 
@@ -68,113 +66,32 @@ The script installs Snap support and then installs:
 
 The script installs Flatpak, adds Flathub, and installs:
 
-- [GIMP](https://www.gimp.org)
-- [G'MIC-Qt plug-in for GIMP 3](https://github.com/flathub/org.gimp.GIMP.Plugin.GMic)
-- [Resynthesizer plug-in for GIMP 3](https://github.com/bootchk/resynthesizer)
-- [Tangram](https://github.com/sonnyp/Tangram)
 - NormCap
 - Google Chrome
 - Emojify
 - Master PDF Editor
 
-### GIMP Resynthesizer Plug-in
+### GIMP Ecosystem
 
-The script installs Resynthesizer from Flathub. After restarting GIMP, its
-features include `Filters > Enhance > Heal Selection`.
+The complete GIMP ecosystem lives in its own repository:
+[gimp-setup](https://github.com/diegochagas/gimp-setup).
 
-If GIMP does not detect the plug-in, open
-`Edit > Preferences > Folders > Plugins`, add
-`$HOME/.var/app/org.gimp.GIMP/data/gimp/3.0/plug-ins`, and restart GIMP.
+The script clones that repository and runs its `setup.sh`, which installs and
+configures with a single command:
 
-### GIMP AI Remove Background Plug-in
+- Flatpak GIMP with the G'MIC and Resynthesizer plug-ins
+- AI Remove Background plug-in
+- PhotoGIMP (Photoshop-inspired interface)
+- SLOS-GIMPainter brushes and presets
+- LinuxBeaver GEGL plug-ins
+- GIMP AI Plugin (OpenAI-powered)
+- Extra features: Photoshop-style menu shortcuts and the PhotoGIMP AI tools
 
-The script also installs the
-[AI Remove Background for GIMP 3](https://github.com/galixstroyer/ai-remove-background-g3)
-plug-in:
-
-- Installs `rembg` and `onnxruntime` inside the Flatpak GIMP Python environment.
-- Patches the plug-in to use Flatpak's Python and its installed packages.
-- Installs the plug-in for Flatpak GIMP 3.2 and the GIMP 3.2/3.0 user config
-  directories.
-- Grants Flatpak GIMP access to the home directory so the plug-in can process
-  files there.
-
-After restarting GIMP, use the plug-in from
-`Filters > AI > AI Remove Background`. Its first run downloads an AI model of
-approximately 176 MB.
-
-### PhotoGIMP
-
-The script installs
-[PhotoGIMP 3.0](https://github.com/Diolinux/PhotoGIMP) after the other GIMP
-plug-ins. PhotoGIMP applies a Photoshop-inspired interface and configuration to
-Flatpak GIMP.
-
-If `$HOME/.config/GIMP/3.0` already exists, the script first creates a
-timestamped backup such as `$HOME/GIMP-3.0-backup-20260614_120000`. It then
-downloads the PhotoGIMP archive and copies its files into the home directory.
-Restart GIMP after setup to see the PhotoGIMP layout.
-
-To restore a backup, replace `$HOME/.config/GIMP/3.0` with the contents of the
-desired timestamped backup directory.
-
-### SLOS-GIMPainter
-
-The script installs the
-[SLOS-GIMPainter](https://github.com/SenlinOS/SLOS-GIMPainter) brush, dynamics,
-and tool-preset package into `$HOME/.local/share/SLOS-GIMPainter`. It registers
-the package folders in `$HOME/.config/GIMP/3.0/gimprc` after PhotoGIMP is
-applied.
-
-After restarting GIMP:
-
-1. Open `Windows > Dockable Dialogs > Tool Presets`.
-2. Open the dialog menu and select `View as Grid`.
-3. Set the preview size to `Large`.
-4. Select the `SLOS` tab to show the SLOS-GIMPainter presets.
-
-If GIMP does not detect the folders, add the corresponding `brushes`,
-`dynamics`, and `tool-presets` subdirectories manually through
-`Edit > Preferences > Folders`.
-
-### LinuxBeaver GEGL Plug-ins
-
-The script downloads the
-[LinuxBeaver GEGL plug-in collection](https://github.com/LinuxBeaver/LinuxBeaver)
-and installs only its `.so` binaries into
-`$HOME/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins`.
-
-The installed filenames are tracked in
-`$HOME/.local/share/LinuxBeaver-GEGL-plugins.manifest`. On reruns, the script
-uses this manifest to remove stale LinuxBeaver binaries without removing other
-GEGL plug-ins.
-
-After restarting GIMP, find the effects under menus such as
-`Filters > Text Styling`, `Filters > Render > Fun`, and
-`Filters > GEGL Operation`.
-
-### GIMP AI Plugin
-
-The script installs the
-[GIMP AI Plugin](https://github.com/lukaso/gimp-ai) by lukaso into the active
-Flatpak GIMP configuration directory. The plugin requires an OpenAI API key.
-
-The version subfolder is detected automatically (preferring the latest stable
-even-numbered release). Plugin files are installed to the real
-`$HOME/.config/GIMP/<version>/plug-ins/gimp-ai-plugin/` path, which is what
-the Flatpak sandbox reads.
-
-If the GIMP configuration directory does not exist when the script runs (because
-GIMP has not been opened yet), installation is skipped with a warning. Open
-GIMP once, close it, and re-run `setup.sh` to complete the installation.
-
-After restarting GIMP, find the plugin under `Filters > AI`:
-
-- **Inpainting** — fill a selected area with AI-generated content.
-- **Image Generator** — generate a new image from a text prompt.
-- **Layer Composite** — blend layers together using AI.
-
-Configure your OpenAI API key via `Filters > AI > Settings`.
+The repository to clone can be overridden with the `GIMP_SETUP_REPO` variable
+in `config.sh`, and a `GEMINI_API_KEY` set there is forwarded to the GIMP
+setup for its AI Tools feature. See the
+[gimp-setup README](https://github.com/diegochagas/gimp-setup#readme) for
+details, configuration and how to add new GIMP features.
 
 ### Other Software
 
@@ -208,21 +125,11 @@ It also:
 
 ### GIMP
 
-- The AI Remove Background installation patches the current upstream plug-in.
-  If its code structure changes, the setup stops instead of installing a
-  potentially broken patch.
-- Flatpak GIMP receives access to the entire home directory through
-  `flatpak override --user org.gimp.GIMP --filesystem=home`.
-- PhotoGIMP is applied after the other GIMP plug-ins and may overwrite matching
-  GIMP configuration files. Existing GIMP 3.0 configuration is backed up first.
-- SLOS-GIMPainter is applied after PhotoGIMP so its resource paths remain
-  registered in GIMP's configuration.
-- The GIMP AI Plugin requires an OpenAI API key. Set it in GIMP via
-  `Filters > AI > Settings` after installation.
-- If GIMP has not been opened before the setup script runs, the GIMP AI Plugin
-  installation is skipped. Open GIMP once, close it, and re-run `setup.sh`.
-- The GEGL plug-in directory must contain only `.so` files at its top level.
-  Subdirectories or other file types may prevent GIMP from starting.
+- Everything GIMP-related is handled by the
+  [gimp-setup](https://github.com/diegochagas/gimp-setup) repository. See its
+  README for installation details, notes and troubleshooting.
+- If GIMP has not been opened before the setup script runs, some GIMP plug-ins
+  and features are skipped. Open GIMP once, close it, and re-run `setup.sh`.
 - The script downloads software and runs official third-party installation
   scripts, so review `setup.sh` before running it.
 

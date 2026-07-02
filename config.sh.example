@@ -10,3 +10,22 @@
 # Leave empty to skip DaVinci installation.
 #
 DAVINCI_RUN=""
+
+#
+# GIMP ecosystem repository
+#
+# Cloned and executed by the setup to install the
+# complete GIMP ecosystem. Override to use a fork
+# or a local clone.
+#
+GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"
+
+#
+# Google Gemini API key, forwarded to the GIMP setup
+# for its AI Tools feature (Filters > AI).
+#
+# Get a free key at https://aistudio.google.com/apikey
+#
+# Leave empty to configure it later.
+#
+GEMINI_API_KEY=""

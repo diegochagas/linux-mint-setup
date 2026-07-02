@@ -17,6 +17,7 @@ readonly SCRIPT_DIR
 CONFIG_FILE="$SCRIPT_DIR/config.sh"
 
 if [[ -f "$CONFIG_FILE" ]]; then
+    # shellcheck source=/dev/null
     source "$CONFIG_FILE"
 fi
 
@@ -715,17 +716,6 @@ install_snap_packages() {
 install_flatpak_packages() {
     local changed=false
 
-    local GIMP_BRANCH="3"
-
-    install_flatpak_package org.gimp.GIMP && changed=true
-
-    if [[ "$DRY_RUN" == false ]] && is_flatpak_installed org.gimp.GIMP; then
-        GIMP_BRANCH="$(flatpak info org.gimp.GIMP | sed -n 's/^Branch:[[:space:]]*//p')"
-    fi
-
-    install_flatpak_package "org.gimp.GIMP.Plugin.GMic//$GIMP_BRANCH" && changed=true
-    install_flatpak_package "org.gimp.GIMP.Plugin.Resynthesizer//$GIMP_BRANCH" && changed=true
-    
     for package in "${FLATPAK_PACKAGES[@]}"; do
         install_flatpak_package "$package" && changed=true
     done
@@ -737,365 +727,42 @@ install_flatpak_packages() {
     fi
 }
 
-# AI Remove Background plugin for Flatpak GIMP 3.2
-install_ai_remove_background() {
-    print_step "Installing AI Remove Background"
-
-    if file_exists "$HOME/.config/GIMP/3.0/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py" ||
-    file_exists "$HOME/.config/GIMP/3.2/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py" ||
-    file_exists "$HOME/.var/app/org.gimp.GIMP/config/GIMP/3.2/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py"; then
-        print_info "⏭️ AI Remove Background already installed"
-        SUMMARY+=("AI Remove Background|⏭️ Already installed")
-        return
-    fi
-
-    local AI_PLUGIN_NAME="ai-remove-background-g3"
-    local AI_PLUGIN_TEMP_DIR
-    AI_PLUGIN_TEMP_DIR="$(mktemp -d)"
-    local AI_PLUGIN_FILE
-    AI_PLUGIN_FILE="$AI_PLUGIN_TEMP_DIR/$AI_PLUGIN_NAME/$AI_PLUGIN_NAME.py"
-
-    run git clone https://github.com/galixstroyer/ai-remove-background-g3.git "$AI_PLUGIN_TEMP_DIR/$AI_PLUGIN_NAME"
-
-    run flatpak run --command=bash org.gimp.GIMP -c "
-    python3 -m ensurepip --user 2>/dev/null || true
-    python3 -m pip install --user 'rembg[cpu,cli]' onnxruntime
-    "
-
-    local AI_SITE_PACKAGES
-    AI_SITE_PACKAGES="$(flatpak run --command=bash org.gimp.GIMP -c "python3 -c 'import site; print(site.getusersitepackages())'")"
-    export AI_PLUGIN_FILE AI_SITE_PACKAGES
-
-    if [[ "$DRY_RUN" == true ]]; then
-        print_info "➜ Patch AI Remove Background plugin"
-    else
-        python3 <<'PYEOF'
-import os
-import re
-
-plugin_file = os.environ["AI_PLUGIN_FILE"]
-site_packages = os.environ["AI_SITE_PACKAGES"]
-
-with open(plugin_file, encoding="utf-8") as file:
-    content = file.read()
-
-content = content.replace(
-    'DEFAULT_PYTHON = os.path.expanduser("~/.rembg/bin/python")',
-    'DEFAULT_PYTHON = "/usr/bin/python3"',
-)
-
-new_func = f'''def _run_rembg(python_exe: str, model: str, alpha_matting: bool,
-               ae_value: int, in_path: str, out_path: str):
-    script = (
-        "import sys\\n"
-        "sys.path.insert(0, {site_packages!r})\\n"
-        "from rembg import remove, new_session\\n"
-        "from PIL import Image\\n"
-        "kwargs = {{'alpha_matting': " + str(alpha_matting) + ", 'alpha_matting_erode_size': " + str(int(ae_value)) + "}}\\n"
-        "session = new_session('" + model + "')\\n"
-        "inp = Image.open('" + in_path + "')\\n"
-        "out = remove(inp, session=session, **kwargs)\\n"
-        "out.save('" + out_path + "')\\n"
-    )
-    proc = subprocess.Popen(["/usr/bin/python3", "-c", script],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, shell=False)
-    _, stderr = proc.communicate()
-    if proc.returncode != 0:
-        msg = stderr.decode("utf-8", errors="ignore").strip()
-        raise RuntimeError(msg or "rembg exited with an error")
-'''
-
-content, replacements = re.subn(
-    r"def _run_rembg\(.*?\n(?=def |\Z)",
-    lambda _: new_func + "\n",
-    content,
-    flags=re.DOTALL,
-)
-if replacements != 1:
-    raise RuntimeError(f"Expected to patch one _run_rembg function, patched {replacements}")
-
-with open(plugin_file, "w", encoding="utf-8") as file:
-    file.write(content)
-PYEOF
-    fi
-
-    run flatpak override --user org.gimp.GIMP --filesystem=home
-
-    for AI_PLUGIN_DIR in \
-        "$HOME/.var/app/org.gimp.GIMP/config/GIMP/3.2/plug-ins/$AI_PLUGIN_NAME" \
-        "$HOME/.config/GIMP/3.2/plug-ins/$AI_PLUGIN_NAME" \
-        "$HOME/.config/GIMP/3.0/plug-ins/$AI_PLUGIN_NAME"
-    do
-        run mkdir -p "$AI_PLUGIN_DIR"
-        run install -m 755 "$AI_PLUGIN_FILE" "$AI_PLUGIN_DIR/$AI_PLUGIN_NAME.py"
-    done
-
-    run rm -rf "$AI_PLUGIN_TEMP_DIR"
-
-    SUMMARY+=("AI Remove Background|$INSTALLATION_MESSAGE")
-}
-
-# PhotoGIMP for Flatpak GIMP 3.x
-install_photogimp() {
-    print_step "Installing PhotoGIMP"
-
-    local PHOTOGIMP_VERSION="3.0"
-    local PHOTOGIMP_MARKER="$HOME/.config/GIMP/.photogimp-installed"
-    local PHOTOGIMP_CONFIG_DIR="$HOME/.config/GIMP/3.0"
-    local PHOTOGIMP_TEMP_DIR
-    PHOTOGIMP_TEMP_DIR="$(mktemp -d)"
-
-    if file_exists "$PHOTOGIMP_MARKER"; then
-        print_info "⏭️ PhotoGIMP already installed"
-        SUMMARY+=("PhotoGIMP|⏭️ Already installed")
-        return
-    fi
-
-    if [[ -d "$PHOTOGIMP_CONFIG_DIR" ]]; then
-        local PHOTOGIMP_BACKUP_DIR
-        PHOTOGIMP_BACKUP_DIR="$HOME/GIMP-3.0-backup-$(date +%Y%m%d_%H%M%S)"
-
-        run cp -a "$PHOTOGIMP_CONFIG_DIR" "$PHOTOGIMP_BACKUP_DIR"
-
-        print_info "Existing GIMP 3.0 configuration backed up to $PHOTOGIMP_BACKUP_DIR"
-    fi
-
-    run curl -fsSL \
-        "https://github.com/Diolinux/PhotoGIMP/releases/download/3.0/PhotoGIMP-linux.zip" \
-        -o "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip"
-
-    run unzip -q \
-        "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip" \
-        -d "$PHOTOGIMP_TEMP_DIR/photogimp"
-
-    run cp -a "$PHOTOGIMP_TEMP_DIR/photogimp/." "$HOME/"
-
-    run mkdir -p "$(dirname "$PHOTOGIMP_MARKER")"
-
-    run bash -c "echo '$PHOTOGIMP_VERSION' > '$PHOTOGIMP_MARKER'"
-
-    run rm -rf "$PHOTOGIMP_TEMP_DIR"
-
-    SUMMARY+=("PhotoGIMP|$INSTALLATION_MESSAGE")
-}
-
-# SLOS-GIMPainter brushes and presets for GIMP 3.x
-install_slos_gimppainter() {
-    print_step "Installing SLOS-GIMPainter"
-
-    if directory_exists "$HOME/.local/share/SLOS-GIMPainter"; then
-        print_info "⏭️ SLOS-GIMPainter already installed"
-        SUMMARY+=("SLOS-GIMPainter|⏭️ Already installed")
-        return
-    fi
-
-    local SLOS_INSTALL_DIR="$HOME/.local/share/SLOS-GIMPainter"
-    local SLOS_TEMP_DIR
-    SLOS_TEMP_DIR="$(mktemp -d)"
-    local SLOS_GIMPRC
-    SLOS_GIMPRC="$HOME/.config/GIMP/3.0/gimprc"
-
-    run curl -fsSL https://github.com/SenlinOS/SLOS-GIMPainter/archive/refs/heads/master.zip \
-    -o "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip"
-    run unzip -q "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip" -d "$SLOS_TEMP_DIR"
-    run rm -rf "$SLOS_INSTALL_DIR"
-    run mv "$SLOS_TEMP_DIR/SLOS-GIMPainter-master" "$SLOS_INSTALL_DIR"
-    run rm -rf "$SLOS_TEMP_DIR"
-
-    run mkdir -p "$(dirname "$SLOS_GIMPRC")"
-    run touch "$SLOS_GIMPRC"
-
-    if ! grep -Fq "$SLOS_INSTALL_DIR" "$SLOS_GIMPRC"; then
-        if [[ "$DRY_RUN" == true ]]; then
-            print_info "➜ Update $SLOS_GIMPRC"
-        else
-            {
-                echo "(brush-path-writable \"$SLOS_INSTALL_DIR/brushes\")"
-                echo "(pattern-path-writable \"$SLOS_INSTALL_DIR/patterns\")"
-                echo "(gradient-path-writable \"$SLOS_INSTALL_DIR/gradients\")"
-            } >> "$SLOS_GIMPRC"
-        fi
-    fi
-
-    SUMMARY+=("SLOS-GIMPainter|$INSTALLATION_MESSAGE")
-}
-
-# LinuxBeaver GEGL plugins for Flatpak GIMP 3.x
-install_linuxbeaver() {
-    print_step "Installing LinuxBeaver GEGL Plugins"
-
-    local LINUXBEAVER_PLUGIN_DIR="$HOME/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins"
-    local LINUXBEAVER_MANIFEST="$HOME/.local/share/LinuxBeaver-GEGL-plugins.manifest"
-    local LINUXBEAVER_TEMP_DIR
-    LINUXBEAVER_TEMP_DIR="$(mktemp -d)"
-
-    if file_exists "$LINUXBEAVER_MANIFEST"; then
-        print_info "⏭️ LinuxBeaver already installed"
-        SUMMARY+=("LinuxBeaver|⏭️ Already installed")
-        return
-    fi
-
-    run mkdir -p "$LINUXBEAVER_PLUGIN_DIR" "$(dirname "$LINUXBEAVER_MANIFEST")"
-
-    run curl -fsSL \
-        "https://github.com/LinuxBeaver/LinuxBeaver/releases/download/Gimp_GEGL_Plugin_download_page/LinuxBinaries_all_plugins.zip" \
-        -o "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip"
-
-    run unzip -q \
-        "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip" \
-        -d "$LINUXBEAVER_TEMP_DIR/extracted"
-
-    if [[ "$DRY_RUN" == false ]]; then
-        local LINUXBEAVER_PLUGIN_COUNT
-        LINUXBEAVER_PLUGIN_COUNT="$(find "$LINUXBEAVER_TEMP_DIR/extracted" \
-            -maxdepth 3 \
-            -type f \
-            -name '*.so' \
-            -print | wc -l)"
-
-        if [[ "$LINUXBEAVER_PLUGIN_COUNT" -eq 0 ]]; then
-            print_info "No LinuxBeaver GEGL plugin binaries were found in the downloaded archive."
-            exit 1
-        fi
-
-        if [[ -f "$LINUXBEAVER_MANIFEST" ]]; then
-            while IFS= read -r LINUXBEAVER_PLUGIN_NAME; do
-                case "$LINUXBEAVER_PLUGIN_NAME" in
-                    */*) ;;
-                    *.so) rm -f "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME" ;;
-                esac
-            done < "$LINUXBEAVER_MANIFEST"
-        fi
-
-        : > "$LINUXBEAVER_MANIFEST"
-
-        while IFS= read -r -d '' LINUXBEAVER_PLUGIN_FILE; do
-            LINUXBEAVER_PLUGIN_NAME="$(basename "$LINUXBEAVER_PLUGIN_FILE")"
-            install -m 755 "$LINUXBEAVER_PLUGIN_FILE" "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME"
-            printf '%s\n' "$LINUXBEAVER_PLUGIN_NAME" >> "$LINUXBEAVER_MANIFEST"
-        done < <(find "$LINUXBEAVER_TEMP_DIR/extracted" \
-            -maxdepth 3 \
-            -type f \
-            -name '*.so' \
-            -print0)
-    fi
-
-    run rm -rf "$LINUXBEAVER_TEMP_DIR"
-
-    SUMMARY+=("LinuxBeaver|$INSTALLATION_MESSAGE")
-}
-
-# GIMP AI Plugin for Flatpak GIMP 3.x (OpenAI-powered: Inpainting, Image Generator, etc.)
-install_gimp_ai_plugin() {
-    print_step "Installing GIMP AI Plugin"
-
-    local GIMP_AI_DETECTED_VERSION=""
-
-    #
-    # Detect the newest stable GIMP configuration (3.0, 3.2, 3.4, ...)
-    #
-    GIMP_AI_DETECTED_VERSION="$(
-        flatpak run --command=bash org.gimp.GIMP -c \
-            "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null |
-        tr ' ' '\n' |
-        sort -V -r |
-        while IFS= read -r ver; do
-            minor=$(echo "$ver" | cut -d. -f2)
-
-            if [[ -n "$minor" ]] && (( minor % 2 == 0 )); then
-                echo "$ver"
-                break
-            fi
-        done
-    )"
-
-    #
-    # Already installed?
-    #
-    if [[ -n "$GIMP_AI_DETECTED_VERSION" ]] &&
-       file_exists "$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin/gimp-ai-plugin.py"
-    then
-        print_info "⏭️ GIMP AI Plugin already installed"
-        SUMMARY+=("GIMP AI Plugin|⏭️ Already installed")
-        return
-    fi
-
-    #
-    # Fallback to the newest available config if no stable version was found.
-    #
-    if [[ -z "$GIMP_AI_DETECTED_VERSION" ]]; then
-        GIMP_AI_DETECTED_VERSION="$(
-            flatpak run --command=bash org.gimp.GIMP -c \
-                "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null |
-            tr ' ' '\n' |
-            sort -V |
-            tail -1
-        )"
-    fi
-
-    #
-    # GIMP has never been started.
-    #
-    if [[ -z "$GIMP_AI_DETECTED_VERSION" ]]; then
-        print_info "GIMP config directory not found — open GIMP once after setup, then re-run to install the GIMP AI Plugin."
-        SUMMARY+=("GIMP AI Plugin|⏭️ Waiting for GIMP")
-        return
-    fi
-
-    local GIMP_AI_PLUGIN_DIR="$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin"
-    local GIMP_AI_TEMP_DIR
-    GIMP_AI_TEMP_DIR="$(mktemp -d)"
-
-    local GIMP_AI_TAG
-    GIMP_AI_TAG="$(
-        curl -fsSL https://api.github.com/repos/lukaso/gimp-ai/releases/latest |
-        jq -r '.tag_name'
-    )"
-
-    local GIMP_AI_ZIP_URL
-    GIMP_AI_ZIP_URL="https://github.com/lukaso/gimp-ai/releases/download/${GIMP_AI_TAG}/gimp-ai-plugin-${GIMP_AI_TAG}.zip"
-
-    run curl -fsSL "$GIMP_AI_ZIP_URL" \
-        -o "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip"
-
-    run unzip -q \
-        "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip" \
-        -d "$GIMP_AI_TEMP_DIR/extracted"
-
-    run mkdir -p "$GIMP_AI_PLUGIN_DIR"
-
-    run find "$GIMP_AI_TEMP_DIR/extracted" \
-        -name "gimp-ai-plugin.py" \
-        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
-
-    run find "$GIMP_AI_TEMP_DIR/extracted" \
-        -name "coordinate_utils.py" \
-        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
-
-    run chmod +x "$GIMP_AI_PLUGIN_DIR/gimp-ai-plugin.py"
-    run chmod +x "$GIMP_AI_PLUGIN_DIR/coordinate_utils.py"
-
-    run find "$HOME/.var/app/org.gimp.GIMP/" -name pluginrc -delete
-    run find "$HOME/.config/GIMP/" -name pluginrc -delete
-
-    run rm -rf "$GIMP_AI_TEMP_DIR"
-
-    SUMMARY+=("GIMP AI Plugin|$INSTALLATION_MESSAGE")
-}
-
+########################################
+# Installs the complete GIMP ecosystem
+# (Flatpak GIMP, plug-ins, resources and
+# extra features) from the dedicated
+# gimp-setup repository:
+#
+#   https://github.com/diegochagas/gimp-setup
+#
+# The repository is cloned to a temporary
+# directory and its own setup.sh does the
+# work. Configuration values (for example,
+# GEMINI_API_KEY) are forwarded through
+# the environment.
+########################################
 install_gimp_ecosystem() {
     print_step "Installing GIMP ecosystem"
 
-    install_ai_remove_background
+    local GIMP_SETUP_REPO_URL="${GIMP_SETUP_REPO:-https://github.com/diegochagas/gimp-setup.git}"
+    local GIMP_SETUP_DIR
+    GIMP_SETUP_DIR="$(mktemp -d)"
 
-    install_photogimp
+    run git clone --depth 1 "$GIMP_SETUP_REPO_URL" "$GIMP_SETUP_DIR"
 
-    install_slos_gimppainter
+    local GIMP_SETUP_ARGS=()
 
-    install_linuxbeaver
+    if [[ "$DRY_RUN" == true ]]; then
+        GIMP_SETUP_ARGS+=(--dry-run)
+    fi
 
-    install_gimp_ai_plugin
+    export GEMINI_API_KEY="${GEMINI_API_KEY:-}"
+
+    run bash "$GIMP_SETUP_DIR/setup.sh" "${GIMP_SETUP_ARGS[@]}"
+
+    run rm -rf "$GIMP_SETUP_DIR"
+
+    SUMMARY+=("GIMP Ecosystem|$INSTALLATION_MESSAGE")
 }
 
 install_tailscale() {
