@@ -31,6 +31,46 @@ readonly LOG_FILE
 ARCHITECTURE="$(dpkg --print-architecture)"
 readonly ARCHITECTURE
 
+APT_PACKAGES=(
+    firefox
+    libimage-exiftool-perl
+    vlc
+    sublime-text
+    git
+    nodejs
+    npm
+    python3
+    curl
+    jq
+    unzip
+    xclip
+    libxcb-xinerama0
+    copyq
+    btop
+    inkscape
+    nextcloud-desktop
+    ffmpeg
+    gparted
+    tree
+    shellcheck
+    virtualbox
+)
+
+SNAP_PACKAGES=(
+    snapd
+    surfshark
+    code
+    insomnia
+    localsend
+)
+
+FLATPAK_PACKAGES=(
+    com.github.dynobo.normcap
+    com.google.Chrome
+    xyz.riothedev.emojify
+    net.code_industry.MasterPDFEditor
+)
+
 ########################################
 # Runtime options
 ########################################
@@ -71,14 +111,6 @@ print_header() {
     echo "Mode: $([[ "$DRY_RUN" == true ]] && echo "Simulation" || echo "Installation")"
     echo
 }
-
-if [[ "$DRY_RUN" == true ]]; then
-    INSTALLATION_MESSAGE="✅ Installed"
-    CONFIGURATION_MESSAGE="✅ Configured"
-else
-    INSTALLATION_MESSAGE="🔄 Would install"
-    CONFIGURATION_MESSAGE="🔄 Would configure"
-fi
 
 ########################################
 # Prints a section header.
@@ -248,7 +280,8 @@ handle_error() {
 # In dry-run mode, only prints it.
 ########################################
 run() {
-    print_info "➜ $*"
+    printf -v cmd '%q ' "$@"
+    print_info "➜ ${cmd% }"
 
     if [[ "$DRY_RUN" == false ]]; then
         "$@"
@@ -448,14 +481,21 @@ is_flatpak_installed() {
 # Installation
 ########################################
 
+apt_package_needs_installation() {
+    local package="$1"
+
+    if is_apt_installed "$package"; then
+        return 1
+    fi
+
+    return 0
+}
+
 install_apt_packages() {
     # Fix Snap restriction
     if [[ -f /etc/apt/preferences.d/nosnap.pref ]]; then
         run sudo mv /etc/apt/preferences.d/nosnap.pref /etc/apt/preferences.d/nosnap.bak
     fi
-
-    # APT packages
-    run sudo apt update
 
     if [[ "$DRY_RUN" == true ]]; then
         print_info "➜ wget ... | gpg --dearmor | sudo tee ..."
@@ -470,56 +510,25 @@ install_apt_packages() {
             | sudo tee /etc/apt/sources.list.d/sublime-text.list >/dev/null
     fi
 
-    run sudo apt install -y \
-    firefox \
-    libimage-exiftool-perl \
-    vlc \
-    sublime-text \
-    git \
-    nodejs \
-    npm \
-    python3 \
-    curl \
-    jq \
-    unzip \
-    xclip \
-    libxcb-xinerama0 \
-    copyq \
-    btop \
-    inkscape \
-    nextcloud-desktop \
-    ffmpeg \
-    gparted \
-    tree \
-    shellcheck \
-    virtualbox
-        
-    SUMMARY+=("APT Packages|$INSTALLATION_MESSAGE")
-}
+    local changed=false
 
-########################################
-# Installs an APT package if needed.
-#
-# Arguments:
-#   $1 - Package name
-########################################
-install_apt_package() {
-    local package="$1"
+    for package in "${APT_PACKAGES[@]}"; do
+        if apt_package_needs_installation "$package"; then
+            changed=true
+            break
+        fi
+    done
 
-    if is_apt_installed "$package"; then
-        print_info "⏭️  $package already installed"
+    if ! $changed; then
+        print_info "⏭️ All APT packages already installed"
+        SUMMARY+=("APT Packages|⏭️ Already installed")
         return
     fi
 
-    print_step "Installing $package..."
-
-    run sudo apt install -y "$package"
-
-    if [[ "$DRY_RUN" == true ]]; then
-        print_info "🔄 Would install $package"
-    else
-        print_info "✅ $package installed"
-    fi
+    run sudo apt update
+    run sudo apt install -y "${APT_PACKAGES[@]}"
+        
+    SUMMARY+=("APT Packages|$INSTALLATION_MESSAGE")
 }
 
 ########################################
@@ -535,7 +544,7 @@ install_snap_package() {
 
     if is_snap_installed "$package"; then
         print_info "⏭️  $package already installed"
-        return
+        return 1
     fi
 
     print_step "Installing $package..."
@@ -547,6 +556,8 @@ install_snap_package() {
     else
         print_info "🔄 Would install $package"
     fi
+
+    return 0
 }
 
 ########################################
@@ -561,7 +572,7 @@ install_flatpak_package() {
 
     if is_flatpak_installed "$app_id"; then
         print_info "⏭️  $app_id already installed"
-        return
+        return 1
     fi
 
     print_step "Installing $app_id..."
@@ -573,6 +584,8 @@ install_flatpak_package() {
     else
         print_info "🔄 Would install $app_id"
     fi
+
+    return 0
 }
 
 # Remote Mouse (official AMD64 downloads)
@@ -682,34 +695,46 @@ install_immich_go() {
 }
 
 install_snap_packages() {
-    install_apt_package snapd
+    local changed=false
 
-    install_snap_package surfshark
-    install_snap_package code --classic
-    install_snap_package insomnia
-    install_snap_package localsend
+    for package in "${SNAP_PACKAGES[@]}"; do
+        if [[ "$package" == "code" ]]; then
+            install_snap_package "$package" --classic && changed=true
+        else
+            install_snap_package "$package" && changed=true
+        fi
+    done
 
-    SUMMARY+=("Snap Packages|$INSTALLATION_MESSAGE")
+    if $changed; then
+        SUMMARY+=("Snap Packages|$INSTALLATION_MESSAGE")
+    else
+        SUMMARY+=("Snap Packages|⏭️ Already installed")
+    fi
 }
 
 install_flatpak_packages() {
-    install_flatpak_package org.gimp.GIMP
+    local changed=false
 
     local GIMP_BRANCH="3"
 
-    if [[ "$DRY_RUN" == false ]]; then
-        GIMP_BRANCH="$(flatpak info org.gimp.GIMP --show-branch 2>/dev/null || echo "3")"
+    install_flatpak_package org.gimp.GIMP && changed=true
+
+    if [[ "$DRY_RUN" == false ]] && is_flatpak_installed org.gimp.GIMP; then
+        GIMP_BRANCH="$(flatpak info org.gimp.GIMP | sed -n 's/^Branch:[[:space:]]*//p')"
     fi
 
-    install_flatpak_package "org.gimp.GIMP.Plugin.GMic//$GIMP_BRANCH"
-    install_flatpak_package "org.gimp.GIMP.Plugin.Resynthesizer//$GIMP_BRANCH"
+    install_flatpak_package "org.gimp.GIMP.Plugin.GMic//$GIMP_BRANCH" && changed=true
+    install_flatpak_package "org.gimp.GIMP.Plugin.Resynthesizer//$GIMP_BRANCH" && changed=true
+    
+    for package in "${FLATPAK_PACKAGES[@]}"; do
+        install_flatpak_package "$package" && changed=true
+    done
 
-    install_flatpak_package com.github.dynobo.normcap
-    install_flatpak_package com.google.Chrome
-    install_flatpak_package xyz.riothedev.emojify
-    install_flatpak_package net.code_industry.MasterPDFEditor
-
-    SUMMARY+=("Flatpak Packages|$INSTALLATION_MESSAGE")
+    if $changed; then
+        SUMMARY+=("Flatpak Packages|$INSTALLATION_MESSAGE")
+    else
+        SUMMARY+=("Flatpak Packages|⏭️ Already installed")
+    fi
 }
 
 # AI Remove Background plugin for Flatpak GIMP 3.2
@@ -846,8 +871,6 @@ install_photogimp() {
 
     run cp -a "$PHOTOGIMP_TEMP_DIR/photogimp/." "$HOME/"
 
-    print_info "Creating PhotoGIMP marker..."
-
     run mkdir -p "$(dirname "$PHOTOGIMP_MARKER")"
 
     run bash -c "echo '$PHOTOGIMP_VERSION' > '$PHOTOGIMP_MARKER'"
@@ -969,54 +992,94 @@ install_gimp_ai_plugin() {
 
     local GIMP_AI_DETECTED_VERSION=""
 
-    if [[ "$DRY_RUN" == false ]]; then
-        GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
-            "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
-            | tr ' ' '\n' | sort -V -r | while IFS= read -r ver; do
-                minor=$(echo "$ver" | cut -d. -f2)
-                [[ -n "$minor" ]] && (( minor % 2 == 0 )) && {
-                    echo "$ver"
-                    break
-                }
-            done)
-    fi
+    #
+    # Detect the newest stable GIMP configuration (3.0, 3.2, 3.4, ...)
+    #
+    GIMP_AI_DETECTED_VERSION="$(
+        flatpak run --command=bash org.gimp.GIMP -c \
+            "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null |
+        tr ' ' '\n' |
+        sort -V -r |
+        while IFS= read -r ver; do
+            minor=$(echo "$ver" | cut -d. -f2)
 
-    if file_exists "$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin/gimp-ai-plugin.py"; then
+            if [[ -n "$minor" ]] && (( minor % 2 == 0 )); then
+                echo "$ver"
+                break
+            fi
+        done
+    )"
+
+    #
+    # Already installed?
+    #
+    if [[ -n "$GIMP_AI_DETECTED_VERSION" ]] &&
+       file_exists "$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin/gimp-ai-plugin.py"
+    then
         print_info "⏭️ GIMP AI Plugin already installed"
         SUMMARY+=("GIMP AI Plugin|⏭️ Already installed")
         return
     fi
-    
+
+    #
+    # Fallback to the newest available config if no stable version was found.
+    #
     if [[ -z "$GIMP_AI_DETECTED_VERSION" ]]; then
-        GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
-            "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
-            | tr ' ' '\n' | sort -V | tail -1)
+        GIMP_AI_DETECTED_VERSION="$(
+            flatpak run --command=bash org.gimp.GIMP -c \
+                "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null |
+            tr ' ' '\n' |
+            sort -V |
+            tail -1
+        )"
     fi
 
+    #
+    # GIMP has never been started.
+    #
     if [[ -z "$GIMP_AI_DETECTED_VERSION" ]]; then
         print_info "GIMP config directory not found — open GIMP once after setup, then re-run to install the GIMP AI Plugin."
-    else
-        local GIMP_AI_PLUGIN_DIR="$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin"
-        local GIMP_AI_TEMP_DIR
-        GIMP_AI_TEMP_DIR="$(mktemp -d)"
-        local GIMP_AI_TAG
-        GIMP_AI_TAG=$(curl -fsSL https://api.github.com/repos/lukaso/gimp-ai/releases/latest \
-            | jq -r '.tag_name')
-        local GIMP_AI_ZIP_URL
-        GIMP_AI_ZIP_URL="https://github.com/lukaso/gimp-ai/releases/download/${GIMP_AI_TAG}/gimp-ai-plugin-${GIMP_AI_TAG}.zip"
-        run curl -fsSL "$GIMP_AI_ZIP_URL" -o "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip"
-        run unzip -q "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip" -d "$GIMP_AI_TEMP_DIR/extracted"
-        run mkdir -p "$GIMP_AI_PLUGIN_DIR"
-        run find "$GIMP_AI_TEMP_DIR/extracted" -name "gimp-ai-plugin.py" \
-            -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
-        run find "$GIMP_AI_TEMP_DIR/extracted" -name "coordinate_utils.py" \
-            -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
-        run chmod +x "$GIMP_AI_PLUGIN_DIR/gimp-ai-plugin.py"
-        run chmod +x "$GIMP_AI_PLUGIN_DIR/coordinate_utils.py"
-        run find "$HOME/.var/app/org.gimp.GIMP/" -name "pluginrc" -delete 2>/dev/null || true
-        run find "$HOME/.config/GIMP/" -name "pluginrc" -delete
-        run rm -rf "$GIMP_AI_TEMP_DIR"
+        SUMMARY+=("GIMP AI Plugin|⏭️ Waiting for GIMP")
+        return
     fi
+
+    local GIMP_AI_PLUGIN_DIR="$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin"
+    local GIMP_AI_TEMP_DIR
+    GIMP_AI_TEMP_DIR="$(mktemp -d)"
+
+    local GIMP_AI_TAG
+    GIMP_AI_TAG="$(
+        curl -fsSL https://api.github.com/repos/lukaso/gimp-ai/releases/latest |
+        jq -r '.tag_name'
+    )"
+
+    local GIMP_AI_ZIP_URL
+    GIMP_AI_ZIP_URL="https://github.com/lukaso/gimp-ai/releases/download/${GIMP_AI_TAG}/gimp-ai-plugin-${GIMP_AI_TAG}.zip"
+
+    run curl -fsSL "$GIMP_AI_ZIP_URL" \
+        -o "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip"
+
+    run unzip -q \
+        "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip" \
+        -d "$GIMP_AI_TEMP_DIR/extracted"
+
+    run mkdir -p "$GIMP_AI_PLUGIN_DIR"
+
+    run find "$GIMP_AI_TEMP_DIR/extracted" \
+        -name "gimp-ai-plugin.py" \
+        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
+
+    run find "$GIMP_AI_TEMP_DIR/extracted" \
+        -name "coordinate_utils.py" \
+        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
+
+    run chmod +x "$GIMP_AI_PLUGIN_DIR/gimp-ai-plugin.py"
+    run chmod +x "$GIMP_AI_PLUGIN_DIR/coordinate_utils.py"
+
+    run find "$HOME/.var/app/org.gimp.GIMP/" -name pluginrc -delete
+    run find "$HOME/.config/GIMP/" -name pluginrc -delete
+
+    run rm -rf "$GIMP_AI_TEMP_DIR"
 
     SUMMARY+=("GIMP AI Plugin|$INSTALLATION_MESSAGE")
 }
@@ -1259,6 +1322,14 @@ install_system() {
 
 main() {
     parse_arguments "$@"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        INSTALLATION_MESSAGE="🔄 Would install"
+        CONFIGURATION_MESSAGE="🔄 Would configure"
+    else
+        INSTALLATION_MESSAGE="✅ Installed"
+        CONFIGURATION_MESSAGE="✅ Configured"
+    fi
 
     initialize_logging
 
