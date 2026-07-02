@@ -396,9 +396,9 @@ initialize() {
 
     check_dependencies
 
-    check_internet_connection
-
     check_sudo
+
+    check_internet_connection
 
     check_linux_mint_version
 }
@@ -895,7 +895,8 @@ install_linuxbeaver() {
 
     run mkdir -p "$LINUXBEAVER_PLUGIN_DIR" "$(dirname "$LINUXBEAVER_MANIFEST")"
 
-    run curl -fsSL ... \
+    run curl -fsSL \
+        "https://github.com/LinuxBeaver/LinuxBeaver/releases/download/Gimp_GEGL_Plugin_download_page/LinuxBinaries_all_plugins.zip" \
         -o "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip"
 
     run unzip -q \
