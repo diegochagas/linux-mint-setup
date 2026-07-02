@@ -1,54 +1,599 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -Eeuo pipefail
+trap 'handle_error $? ${LINENO} "$BASH_COMMAND"' ERR
 
-echo "=================================================="
-echo " Linux Mint Post-Install Setup Script"
-echo "=================================================="
+########################################
+# Linux Mint Setup
+#
+# Main entry point.
+########################################
 
-# Fix Snap restriction
-if [ -f /etc/apt/preferences.d/nosnap.pref ]; then
-sudo mv /etc/apt/preferences.d/nosnap.pref /etc/apt/preferences.d/nosnap.bak
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly SCRIPT_DIR
+
+# Load configuration
+source "$SCRIPT_DIR/config.sh"
+
+readonly VERSION="0.1.0"
+START_TIME=$(date +%s)
+readonly START_TIME
+
+readonly LOG_DIR="$SCRIPT_DIR/logs"
+LOG_FILE="$LOG_DIR/$(date +%Y-%m-%d_%H-%M-%S).log"
+readonly LOG_FILE
+
+ARCHITECTURE="$(dpkg --print-architecture)"
+readonly ARCHITECTURE
+
+########################################
+# Runtime options
+########################################
+
+DRY_RUN=false
+
+INSTALLATION_MESSAGE=""
+CONFIGURATION_MESSAGE=""
+
+SUMMARY=()
+
+########################################
+# Functions
+########################################
+
+print_info() {
+    echo "$@"
+
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        echo "$@" >> "$LOG_FILE"
+    fi
+}
+
+format_time() {
+    local seconds="$1"
+
+    printf "%02d:%02d:%02d\n" \
+        $((seconds/3600)) \
+        $(((seconds%3600)/60)) \
+        $((seconds%60))
+}
+
+print_header() {
+    echo
+    echo "=========================================="
+    echo "        Linux Mint Setup v$VERSION"
+    echo "=========================================="
+    echo "Mode: $([[ "$DRY_RUN" == true ]] && echo "Simulation" || echo "Installation")"
+    echo
+}
+
+if [[ "$DRY_RUN" == true ]]; then
+    INSTALLATION_MESSAGE="✅ Installed"
+    CONFIGURATION_MESSAGE="✅ Configured"
+else
+    INSTALLATION_MESSAGE="🔄 Would install"
+    CONFIGURATION_MESSAGE="🔄 Would configure"
 fi
 
-# APT packages
-sudo apt update
+########################################
+# Prints a section header.
+#
+# Arguments:
+#   $1 - Section title
+########################################
+print_section() {
+    print_info
+    print_info "========================================"
+    print_info "$1"
+    print_info "========================================"
+    print_info
+}
 
-wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sublimehq-archive.gpg > /dev/null
-echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
-sudo apt update
+print_help() {
+    cat << EOF
+Linux Mint Setup v$VERSION
 
-sudo apt install -y \
-firefox \
-libimage-exiftool-perl \
-vlc \
-sublime-text \
-git \
-nodejs \
-npm \
-python3 \
-curl \
-jq \
-unzip \
-xclip \
-libxcb-xinerama0 \
-copyq \
-btop \
-inkscape \
-nextcloud-desktop \
-ffmpeg \
-gparted \
-tree
+Usage:
+    ./setup.sh [options]
 
-# Remote Mouse and balenaEtcher (official AMD64 downloads)
-if [ "$(dpkg --print-architecture)" = "amd64" ]; then
-REMOTE_MOUSE_DIR="$(mktemp -d)"
-curl -fsSL https://www.remotemouse.net/downloads/linux/RemoteMouse_x86_64.zip -o "$REMOTE_MOUSE_DIR/remotemouse.zip"
-unzip -q "$REMOTE_MOUSE_DIR/remotemouse.zip" -d "$REMOTE_MOUSE_DIR/app"
-sudo install -d /opt/remotemouse
-sudo cp -a "$REMOTE_MOUSE_DIR/app/." /opt/remotemouse/
-sudo ln -sf /opt/remotemouse/RemoteMouse /usr/local/bin/RemoteMouse
-sudo tee /usr/share/applications/remotemouse.desktop > /dev/null << EOF
+Options:
+    --dry-run           Simulate the setup.
+    --help              Show help.
+    --version           Show version.
+
+Examples:
+    ./setup.sh
+
+    ./setup.sh --dry-run
+EOF
+}
+
+print_version() {
+    echo "$VERSION"
+}
+
+########################################
+# Prints execution summary.
+########################################
+print_summary() {
+    local elapsed="$1"
+
+    print_section "Summary"
+
+    for item in "${SUMMARY[@]}"; do
+        IFS="|" read -r name status <<< "$item"
+        print_field "$name" "$status"
+    done
+
+    print_info
+
+    print_field "Elapsed:" "$(format_time "$elapsed")"
+}
+
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+
+            --help)
+                print_help
+                exit 0
+                ;;
+
+            --version)
+                print_version
+                exit 0
+                ;;
+
+            *)
+                print_info "❌ Unknown argument: $1"
+                echo
+                echo "Run './setup.sh --help' for usage information."
+                exit 1
+                ;;
+        esac
+    done
+}
+
+initialize_logging() {
+    mkdir -p "$LOG_DIR"
+
+    touch "$LOG_FILE"
+}
+
+write_log_header() {
+    {
+        echo "========================================"
+        echo "Linux Mint Setup v$VERSION"
+        echo "========================================"
+        echo
+        echo "Date:        $(date)"
+        echo "Host:        $(hostname)"
+        echo "Mode:        $([[ "$DRY_RUN" == true ]] && echo "Simulation" || echo "Installation")"
+        echo
+        echo "========================================"
+        echo
+    } >> "$LOG_FILE"
+}
+
+write_log_footer() {
+    local elapsed="$1"
+
+    {
+        echo
+        echo "========================================"
+        echo "Finished"
+        echo "========================================"
+        echo
+        echo "Status:      SUCCESS"
+        echo "Elapsed:     $(format_time "$elapsed")"
+    } >> "$LOG_FILE"
+}
+
+print_field() {
+    printf "%-18s %s\n" "$1" "$2"
+
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        printf "%-18s %s\n" "$1" "$2" >> "$LOG_FILE"
+    fi
+}
+
+print_step() {
+    print_info
+    print_info "▶ $1"
+    print_info
+}
+
+########################################
+# Handles unexpected errors.
+#
+# Arguments:
+#   $1 - Exit code
+#   $2 - Line number
+#   $3 - Command
+########################################
+handle_error() {
+    local exit_code="$1"
+    local line="$2"
+    local command="$3"
+
+    echo
+    print_info "❌ Setup failed!"
+    echo
+
+    print_field "Exit code:" "$exit_code"
+    print_field "Line:" "$line"
+    print_field "Command:" "$command"
+
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        echo
+        print_info "See log:"
+        print_info "  $LOG_FILE"
+    fi
+
+    exit "$exit_code"
+}
+
+########################################
+# Executes a command.
+#
+# In dry-run mode, only prints it.
+########################################
+run() {
+    print_info "➜ $*"
+
+    if [[ "$DRY_RUN" == false ]]; then
+        "$@"
+    fi
+}
+
+########################################
+# Checks whether a binary exists.
+#
+# Arguments:
+#   $1 - Binary name
+########################################
+binary_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+########################################
+# Checks whether a file exists.
+########################################
+file_exists() {
+    [[ -f "$1" ]]
+}
+
+directory_exists() {
+    [[ -d "$1" ]]
+}
+
+########################################
+# Checks whether a command succeeds.
+#
+# Arguments:
+#   $@ - Command to execute
+########################################
+command_succeeds() {
+    "$@" >/dev/null 2>&1
+}
+
+########################################
+# Checks whether two values match.
+#
+# Arguments:
+#   $1 - Current value
+#   $2 - Expected value
+########################################
+values_match() {
+    [[ "$1" == "$2" ]]
+}
+
+########################################
+# Main
+########################################
+
+########################################
+# Checks if required commands exist.
+########################################
+check_dependencies() {
+    print_info "Checking dependencies..."
+
+    local dependencies=(
+        curl
+        wget
+        git
+        jq
+        unzip
+        tar
+        gsettings
+        dconf
+    )
+
+    local missing=()
+
+    for dependency in "${dependencies[@]}"; do
+        if ! command -v "$dependency" >/dev/null 2>&1; then
+            missing+=("$dependency")
+        fi
+    done
+
+    if (( ${#missing[@]} > 0 )); then
+        print_info "❌ Missing required dependencies:"
+        for dependency in "${missing[@]}"; do
+            print_info "  • $dependency"
+        done
+
+        echo
+        print_info "Please install the missing dependencies and run the script again."
+        exit 1
+    fi
+
+    print_info "✅ Dependencies OK"
+    print_info
+}
+
+########################################
+# Checks if there is an active
+# internet connection.
+########################################
+check_internet_connection() {
+    print_info "Checking internet connection..."
+
+    if curl -Is https://github.com >/dev/null 2>&1; then
+        print_info "✅ Connected"
+    else
+        print_info "❌ No internet connection."
+        print_info
+        print_info "Please connect to the internet and run the script again."
+        exit 1
+    fi
+
+    print_info
+}
+
+check_sudo() {
+    print_info "Checking administrator privileges..."
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "⏭️ Skipped (dry-run)"
+        print_info
+        return
+    fi
+
+    if sudo -v >/dev/null 2>&1; then
+        print_info "✅ OK"
+    else
+        print_info "❌ Administrator privileges are required."
+        exit 1
+    fi
+
+    print_info
+}
+
+check_linux_mint_version() {
+    print_info "Checking operating system..."
+
+    local os_name
+    local version
+
+    os_name=$(awk -F= '$1=="NAME" {gsub(/"/,"",$2); print $2}' /etc/os-release)
+    version=$(awk -F= '$1=="VERSION_ID" {gsub(/"/,"",$2); print $2}' /etc/os-release)
+
+    if [[ "$os_name" != "Linux Mint" ]]; then
+        print_info "❌ Unsupported operating system: $os_name"
+        exit 1
+    fi
+
+    print_info "✅ $os_name $version detected"
+    print_info
+}
+
+initialize() {
+    print_section "Initialization"
+
+    check_dependencies
+
+    check_internet_connection
+
+    check_sudo
+
+    check_linux_mint_version
+}
+
+########################################
+# Package helpers
+########################################
+
+########################################
+# Checks whether an APT package
+# is already installed.
+#
+# Arguments:
+#   $1 - Package name
+########################################
+is_apt_installed() {
+    dpkg -s "$1" >/dev/null 2>&1
+}
+
+########################################
+# Checks whether a Snap package
+# is already installed.
+#
+# Arguments:
+#   $1 - Package name
+########################################
+is_snap_installed() {
+    snap list "$1" >/dev/null 2>&1
+}
+
+########################################
+# Checks whether a Flatpak package
+# is already installed.
+#
+# Arguments:
+#   $1 - Flatpak ID
+########################################
+is_flatpak_installed() {
+    flatpak info "$1" >/dev/null 2>&1
+}
+
+########################################
+# Installation
+########################################
+
+install_apt_packages() {
+    # Fix Snap restriction
+    if [[ -f /etc/apt/preferences.d/nosnap.pref ]]; then
+        run sudo mv /etc/apt/preferences.d/nosnap.pref /etc/apt/preferences.d/nosnap.bak
+    fi
+
+    # APT packages
+    run sudo apt update
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ wget ... | gpg --dearmor | sudo tee ..."
+    else
+        wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sublimehq-archive.gpg > /dev/null
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ Create sublime-text.list"
+    else
+        echo "deb https://download.sublimetext.com/ apt/stable/" \
+            | sudo tee /etc/apt/sources.list.d/sublime-text.list >/dev/null
+    fi
+
+    run sudo apt install -y \
+    firefox \
+    libimage-exiftool-perl \
+    vlc \
+    sublime-text \
+    git \
+    nodejs \
+    npm \
+    python3 \
+    curl \
+    jq \
+    unzip \
+    xclip \
+    libxcb-xinerama0 \
+    copyq \
+    btop \
+    inkscape \
+    nextcloud-desktop \
+    ffmpeg \
+    gparted \
+    tree \
+    shellcheck \
+    virtualbox
+        
+    SUMMARY+=("APT Packages|$INSTALLATION_MESSAGE")
+}
+
+########################################
+# Installs an APT package if needed.
+#
+# Arguments:
+#   $1 - Package name
+########################################
+install_apt_package() {
+    local package="$1"
+
+    if is_apt_installed "$package"; then
+        print_info "⏭️  $package already installed"
+        return
+    fi
+
+    print_step "Installing $package..."
+
+    run sudo apt install -y "$package"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "🔄 Would install $package"
+    else
+        print_info "✅ $package installed"
+    fi
+}
+
+########################################
+# Installs a Snap package if needed.
+#
+# Arguments:
+#   $1 - Package name
+#   $2 - Optional extra arguments
+########################################
+install_snap_package() {
+    local package="$1"
+    shift
+
+    if is_snap_installed "$package"; then
+        print_info "⏭️  $package already installed"
+        return
+    fi
+
+    print_step "Installing $package..."
+
+    run sudo snap install "$package" "$@"
+
+    if [[ "$DRY_RUN" == false ]]; then
+        print_info "✅ $package installed"
+    else
+        print_info "🔄 Would install $package"
+    fi
+}
+
+########################################
+# Installs a Flatpak package if needed.
+#
+# Arguments:
+#   $1 - Flatpak ID
+########################################
+install_flatpak_package() {
+    local package="$1"
+
+    if is_flatpak_installed "$package"; then
+        print_info "⏭️  $package already installed"
+        return
+    fi
+
+    print_step "Installing $package..."
+
+    run flatpak install -y flathub "$package"
+
+    if [[ "$DRY_RUN" == false ]]; then
+        print_info "✅ $package installed"
+    else
+        print_info "🔄 Would install $package"
+    fi
+}
+
+# Remote Mouse (official AMD64 downloads)
+install_remote_mouse() {
+    print_step "Installing Remote Mouse"
+
+    if binary_exists RemoteMouse; then
+        print_info "⏭️ Remote Mouse already installed"
+        SUMMARY+=("Remote Mouse|⏭️ Already installed")
+        return
+    fi
+
+    if [[ "$ARCHITECTURE" == "amd64" ]]; then
+        local REMOTE_MOUSE_DIR
+        REMOTE_MOUSE_DIR="$(mktemp -d)"
+        run curl -fsSL https://www.remotemouse.net/downloads/linux/RemoteMouse_x86_64.zip -o "$REMOTE_MOUSE_DIR/remotemouse.zip"
+        run unzip -q "$REMOTE_MOUSE_DIR/remotemouse.zip" -d "$REMOTE_MOUSE_DIR/app"
+        run sudo install -d /opt/remotemouse
+        run sudo cp -a "$REMOTE_MOUSE_DIR/app/." /opt/remotemouse/
+        run sudo ln -sf /opt/remotemouse/RemoteMouse /usr/local/bin/RemoteMouse
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "➜ Create remotemouse.desktop"
+        else
+            sudo tee /usr/share/applications/remotemouse.desktop > /dev/null << EOF
 [Desktop Entry]
 Type=Application
 Name=Remote Mouse
@@ -57,80 +602,137 @@ Icon=input-mouse
 Terminal=false
 Categories=Utility;Network;
 EOF
-rm -rf "$REMOTE_MOUSE_DIR"
+        fi
 
-ETCHER_DEB="$(mktemp --suffix=.deb)"
-ETCHER_DEB_URL="$(curl -fsSL https://api.github.com/repos/balena-io/etcher/releases/latest | jq -r '.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url' | head -n 1)"
-curl -fsSL "$ETCHER_DEB_URL" -o "$ETCHER_DEB"
-sudo apt install -y "$ETCHER_DEB"
-rm -f "$ETCHER_DEB"
-else
-echo "Skipping Remote Mouse and balenaEtcher: official Linux downloads require AMD64."
-fi
+        SUMMARY+=("Remote Mouse|$INSTALLATION_MESSAGE")
+    else
+        print_info "Skipping Remote Mouse: official Linux download requires AMD64."
+    fi
+}
 
-# immich-go
-case "$(dpkg --print-architecture)" in
-amd64) IMMICH_GO_ARCH="x86_64" ;;
-arm64) IMMICH_GO_ARCH="arm64" ;;
-*) IMMICH_GO_ARCH="" ;;
-esac
+# balenaEtcher (official AMD64 downloads)
+install_balena_etcher() {
+    print_step "Installing balenaEtcher"
 
-if [ -n "$IMMICH_GO_ARCH" ]; then
-IMMICH_GO_DIR="$(mktemp -d)"
-IMMICH_GO_URL="$(curl -fsSL https://api.github.com/repos/simulot/immich-go/releases/latest | jq -r ".assets[] | select(.name == \"immich-go_Linux_${IMMICH_GO_ARCH}.tar.gz\") | .browser_download_url" | head -n 1)"
-if [ -z "$IMMICH_GO_URL" ]; then
-echo "No immich-go Linux $IMMICH_GO_ARCH release asset was found."
-exit 1
-fi
-curl -fsSL "$IMMICH_GO_URL" -o "$IMMICH_GO_DIR/immich-go.tar.gz"
-mkdir -p "$IMMICH_GO_DIR/extracted"
-tar -xzf "$IMMICH_GO_DIR/immich-go.tar.gz" -C "$IMMICH_GO_DIR/extracted"
-IMMICH_GO_BINARY="$(find "$IMMICH_GO_DIR/extracted" -type f -name immich-go -print -quit)"
-if [ -z "$IMMICH_GO_BINARY" ]; then
-echo "immich-go binary was not found in the downloaded archive."
-exit 1
-fi
-sudo install -m 755 "$IMMICH_GO_BINARY" /usr/local/bin/immich-go
-rm -rf "$IMMICH_GO_DIR"
-else
-echo "Skipping immich-go: Linux $(dpkg --print-architecture) release asset is not configured."
-fi
+    if binary_exists balena-etcher; then
+        print_info "⏭️ balenaEtcher already installed"
+        SUMMARY+=("balenaEtcher|⏭️ Already installed")
+        return
+    fi
 
-# Snap packages
-sudo apt install -y snapd
-sudo snap install surfshark
-flatpak install -y flathub re.sonny.Tangram
-sudo snap install code --classic
-sudo snap install insomnia
-sudo snap install localsend
+    if [[ "$ARCHITECTURE" == "amd64" ]]; then
+        local ETCHER_DEB
+        ETCHER_DEB="$(mktemp --suffix=.deb)"
+        local ETCHER_DEB_URL
+        ETCHER_DEB_URL="$(curl -fsSL https://api.github.com/repos/balena-io/etcher/releases/latest | jq -r '.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url' | head -n 1)"
+        run curl -fsSL "$ETCHER_DEB_URL" -o "$ETCHER_DEB"
+        run sudo apt install -y "$ETCHER_DEB"
+        run rm -f "$ETCHER_DEB"
+    else
+        print_info "Skipping balenaEtcher: official Linux downloads require AMD64."
+    fi
 
-# Flatpak packages
-sudo apt install -y flatpak
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install -y flathub org.gimp.GIMP
-flatpak install -y flathub org.gimp.GIMP.Plugin.GMic
-flatpak install -y flathub org.gimp.GIMP.Plugin.Resynthesizer
-flatpak install -y flathub com.github.dynobo.normcap
-flatpak install -y flathub com.google.Chrome
-flatpak install -y flathub xyz.riothedev.emojify
-flatpak install -y flathub net.codeindustry.MasterPDFEditor
+    SUMMARY+=("balenaEtcher|$INSTALLATION_MESSAGE")
+}
+
+install_immich_go() {
+    print_step "Installing immich-go"
+
+    if binary_exists immich-go; then
+        print_info "⏭️ immich-go already installed"
+        SUMMARY+=("immich-go|⏭️ Already installed")
+        return
+    fi
+
+    local IMMICH_GO_ARCH=""
+    
+    case "$ARCHITECTURE" in
+        amd64) IMMICH_GO_ARCH="x86_64" ;;
+        arm64) IMMICH_GO_ARCH="arm64" ;;
+        *) IMMICH_GO_ARCH="" ;;
+    esac
+
+    if [[ -n "$IMMICH_GO_ARCH" ]]; then
+        local IMMICH_GO_DIR
+        IMMICH_GO_DIR="$(mktemp -d)"
+        local IMMICH_GO_URL
+        IMMICH_GO_URL="$(curl -fsSL https://api.github.com/repos/simulot/immich-go/releases/latest | jq -r ".assets[] | select(.name == \"immich-go_Linux_${IMMICH_GO_ARCH}.tar.gz\") | .browser_download_url" | head -n 1)"
+        if [[ -z "$IMMICH_GO_URL" ]]; then
+            print_info "No immich-go Linux $IMMICH_GO_ARCH release asset was found."
+            exit 1
+        fi
+        run curl -fsSL "$IMMICH_GO_URL" -o "$IMMICH_GO_DIR/immich-go.tar.gz"
+        run mkdir -p "$IMMICH_GO_DIR/extracted"
+        run tar -xzf "$IMMICH_GO_DIR/immich-go.tar.gz" -C "$IMMICH_GO_DIR/extracted"
+        local IMMICH_GO_BINARY
+        IMMICH_GO_BINARY="$(find "$IMMICH_GO_DIR/extracted" -type f -name immich-go -print -quit)"
+        if [[ -z "$IMMICH_GO_BINARY" ]]; then
+            print_info "immich-go binary was not found in the downloaded archive."
+            exit 1
+        fi
+        run sudo install -m 755 "$IMMICH_GO_BINARY" /usr/local/bin/immich-go
+        run rm -rf "$IMMICH_GO_DIR"
+    else
+        print_info "Skipping immich-go: Linux $ARCHITECTURE release asset is not configured."
+    fi   
+    SUMMARY+=("immich-go|$INSTALLATION_MESSAGE")  
+}
+
+install_snap_packages() {
+    install_apt_package snapd
+
+    install_snap_package surfshark
+    install_snap_package code --classic
+    install_snap_package insomnia
+    install_snap_package localsend
+
+    SUMMARY+=("Snap Packages|$INSTALLATION_MESSAGE")
+}
+install_flatpak_packages() {
+    install_flatpak_package org.gimp.GIMP
+    install_flatpak_package org.gimp.GIMP.Plugin.GMic
+    install_flatpak_package org.gimp.GIMP.Plugin.Resynthesizer
+    install_flatpak_package com.github.dynobo.normcap
+    install_flatpak_package com.google.Chrome
+    install_flatpak_package xyz.riothedev.emojify
+    install_flatpak_package net.codeindustry.MasterPDFEditor
+
+    SUMMARY+=("Flatpak Packages|$INSTALLATION_MESSAGE")
+}
 
 # AI Remove Background plugin for Flatpak GIMP 3.2
-AI_PLUGIN_NAME="ai-remove-background-g3"
-AI_PLUGIN_TEMP_DIR="$(mktemp -d)"
-AI_PLUGIN_FILE="$AI_PLUGIN_TEMP_DIR/$AI_PLUGIN_NAME/$AI_PLUGIN_NAME.py"
+install_ai_remove_background() {
+    print_step "Installing AI Remove Background"
 
-git clone https://github.com/galixstroyer/ai-remove-background-g3.git "$AI_PLUGIN_TEMP_DIR/$AI_PLUGIN_NAME"
+    if file_exists "$HOME/.config/GIMP/3.0/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py" ||
+    file_exists "$HOME/.config/GIMP/3.2/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py" ||
+    file_exists "$HOME/.var/app/org.gimp.GIMP/config/GIMP/3.2/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py"; then
+        print_info "⏭️ AI Remove Background already installed"
+        SUMMARY+=("AI Remove Background|⏭️ Already installed")
+        return
+    fi
 
-flatpak run --command=bash org.gimp.GIMP -c "
-python3 -m ensurepip --user 2>/dev/null || true
-python3 -m pip install --user 'rembg[cpu,cli]' onnxruntime
-"
+    local AI_PLUGIN_NAME="ai-remove-background-g3"
+    local AI_PLUGIN_TEMP_DIR
+    AI_PLUGIN_TEMP_DIR="$(mktemp -d)"
+    local AI_PLUGIN_FILE
+    AI_PLUGIN_FILE="$AI_PLUGIN_TEMP_DIR/$AI_PLUGIN_NAME/$AI_PLUGIN_NAME.py"
 
-AI_SITE_PACKAGES="$(flatpak run --command=bash org.gimp.GIMP -c "python3 -c 'import site; print(site.getusersitepackages())'")"
-export AI_PLUGIN_FILE AI_SITE_PACKAGES
+    run git clone https://github.com/galixstroyer/ai-remove-background-g3.git "$AI_PLUGIN_TEMP_DIR/$AI_PLUGIN_NAME"
 
-python3 <<'PYEOF'
+    run flatpak run --command=bash org.gimp.GIMP -c "
+    python3 -m ensurepip --user 2>/dev/null || true
+    python3 -m pip install --user 'rembg[cpu,cli]' onnxruntime
+    "
+
+    local AI_SITE_PACKAGES
+    AI_SITE_PACKAGES="$(flatpak run --command=bash org.gimp.GIMP -c "python3 -c 'import site; print(site.getusersitepackages())'")"
+    export AI_PLUGIN_FILE AI_SITE_PACKAGES
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ Patch AI Remove Background plugin"
+    else
+        python3 <<'PYEOF'
 import os
 import re
 
@@ -179,164 +781,375 @@ if replacements != 1:
 with open(plugin_file, "w", encoding="utf-8") as file:
     file.write(content)
 PYEOF
+    fi
 
-flatpak override --user org.gimp.GIMP --filesystem=home
+    run flatpak override --user org.gimp.GIMP --filesystem=home
 
-for AI_PLUGIN_DIR in \
-"$HOME/.var/app/org.gimp.GIMP/config/GIMP/3.2/plug-ins/$AI_PLUGIN_NAME" \
-"$HOME/.config/GIMP/3.2/plug-ins/$AI_PLUGIN_NAME" \
-"$HOME/.config/GIMP/3.0/plug-ins/$AI_PLUGIN_NAME"
-do
-mkdir -p "$AI_PLUGIN_DIR"
-install -m 755 "$AI_PLUGIN_FILE" "$AI_PLUGIN_DIR/$AI_PLUGIN_NAME.py"
-done
+    for AI_PLUGIN_DIR in \
+        "$HOME/.var/app/org.gimp.GIMP/config/GIMP/3.2/plug-ins/$AI_PLUGIN_NAME" \
+        "$HOME/.config/GIMP/3.2/plug-ins/$AI_PLUGIN_NAME" \
+        "$HOME/.config/GIMP/3.0/plug-ins/$AI_PLUGIN_NAME"
+    do
+        run mkdir -p "$AI_PLUGIN_DIR"
+        run install -m 755 "$AI_PLUGIN_FILE" "$AI_PLUGIN_DIR/$AI_PLUGIN_NAME.py"
+    done
 
-rm -rf "$AI_PLUGIN_TEMP_DIR"
+    run rm -rf "$AI_PLUGIN_TEMP_DIR"
+
+    SUMMARY+=("AI Remove Background|$INSTALLATION_MESSAGE")
+}
 
 # PhotoGIMP for Flatpak GIMP 3.x
-PHOTOGIMP_CONFIG_DIR="$HOME/.config/GIMP/3.0"
-PHOTOGIMP_TEMP_DIR="$(mktemp -d)"
+install_photogimp() {
+    print_step "Installing PhotoGIMP"
 
-if [ -d "$PHOTOGIMP_CONFIG_DIR" ]; then
-PHOTOGIMP_BACKUP_DIR="$HOME/GIMP-3.0-backup-$(date +%Y%m%d_%H%M%S)"
-cp -a "$PHOTOGIMP_CONFIG_DIR" "$PHOTOGIMP_BACKUP_DIR"
-echo "Existing GIMP 3.0 configuration backed up to $PHOTOGIMP_BACKUP_DIR"
-fi
+    if file_exists "$HOME/.config/GIMP/3.0/menurc"; then
+        print_info "⏭️ PhotoGIMP already installed"
+        SUMMARY+=("PhotoGIMP|⏭️ Already installed")
+        return
+    fi
+    
+    local PHOTOGIMP_CONFIG_DIR="$HOME/.config/GIMP/3.0"
+    local PHOTOGIMP_TEMP_DIR
+    PHOTOGIMP_TEMP_DIR="$(mktemp -d)"
 
-curl -fsSL https://github.com/Diolinux/PhotoGIMP/releases/download/3.0/PhotoGIMP-linux.zip \
--o "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip"
-unzip -q "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip" -d "$PHOTOGIMP_TEMP_DIR/photogimp"
-cp -a "$PHOTOGIMP_TEMP_DIR/photogimp/." "$HOME/"
-rm -rf "$PHOTOGIMP_TEMP_DIR"
+    if [[ -d "$PHOTOGIMP_CONFIG_DIR" ]]; then
+        local PHOTOGIMP_BACKUP_DIR
+        PHOTOGIMP_BACKUP_DIR="$HOME/GIMP-3.0-backup-$(date +%Y%m%d_%H%M%S)"
+        run cp -a "$PHOTOGIMP_CONFIG_DIR" "$PHOTOGIMP_BACKUP_DIR"
+        print_info "Existing GIMP 3.0 configuration backed up to $PHOTOGIMP_BACKUP_DIR"
+    fi
+
+    run curl -fsSL https://github.com/Diolinux/PhotoGIMP/releases/download/3.0/PhotoGIMP-linux.zip \
+    -o "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip"
+    run unzip -q "$PHOTOGIMP_TEMP_DIR/PhotoGIMP-linux.zip" -d "$PHOTOGIMP_TEMP_DIR/photogimp"
+    run cp -a "$PHOTOGIMP_TEMP_DIR/photogimp/." "$HOME/"
+    run rm -rf "$PHOTOGIMP_TEMP_DIR"
+
+    SUMMARY+=("PhotoGIMP|$INSTALLATION_MESSAGE")
+}
 
 # SLOS-GIMPainter brushes and presets for GIMP 3.x
-SLOS_INSTALL_DIR="$HOME/.local/share/SLOS-GIMPainter"
-SLOS_TEMP_DIR="$(mktemp -d)"
-SLOS_GIMPRC="$HOME/.config/GIMP/3.0/gimprc"
+install_slos_gimppainter() {
+    print_step "Installing SLOS-GIMPainter"
 
-curl -fsSL https://github.com/SenlinOS/SLOS-GIMPainter/archive/refs/heads/master.zip \
--o "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip"
-unzip -q "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip" -d "$SLOS_TEMP_DIR"
-rm -rf "$SLOS_INSTALL_DIR"
-mv "$SLOS_TEMP_DIR/SLOS-GIMPainter-master" "$SLOS_INSTALL_DIR"
-rm -rf "$SLOS_TEMP_DIR"
+    if directory_exists "$HOME/.local/share/SLOS-GIMPainter"; then
+        print_info "⏭️ SLOS-GIMPainter already installed"
+        SUMMARY+=("SLOS-GIMPainter|⏭️ Already installed")
+        return
+    fi
 
-mkdir -p "$(dirname "$SLOS_GIMPRC")"
-touch "$SLOS_GIMPRC"
+    local SLOS_INSTALL_DIR="$HOME/.local/share/SLOS-GIMPainter"
+    local SLOS_TEMP_DIR
+    SLOS_TEMP_DIR="$(mktemp -d)"
+    local SLOS_GIMPRC
+    SLOS_GIMPRC="$HOME/.config/GIMP/3.0/gimprc"
 
-if ! grep -Fq "$SLOS_INSTALL_DIR" "$SLOS_GIMPRC"; then
-echo "(brush-path-writable \"$SLOS_INSTALL_DIR/brushes\")" >> "$SLOS_GIMPRC"
-echo "(dynamics-path-writable \"$SLOS_INSTALL_DIR/dynamics\")" >> "$SLOS_GIMPRC"
-echo "(tool-preset-path-writable \"$SLOS_INSTALL_DIR/tool-presets\")" >> "$SLOS_GIMPRC"
-fi
+    run curl -fsSL https://github.com/SenlinOS/SLOS-GIMPainter/archive/refs/heads/master.zip \
+    -o "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip"
+    run unzip -q "$SLOS_TEMP_DIR/SLOS-GIMPainter.zip" -d "$SLOS_TEMP_DIR"
+    run rm -rf "$SLOS_INSTALL_DIR"
+    run mv "$SLOS_TEMP_DIR/SLOS-GIMPainter-master" "$SLOS_INSTALL_DIR"
+    run rm -rf "$SLOS_TEMP_DIR"
+
+    run mkdir -p "$(dirname "$SLOS_GIMPRC")"
+    run touch "$SLOS_GIMPRC"
+
+    if ! grep -Fq "$SLOS_INSTALL_DIR" "$SLOS_GIMPRC"; then
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "➜ Update $SLOS_GIMPRC"
+        else
+            {
+                echo "(brush-path-writable \"$SLOS_INSTALL_DIR/brushes\")"
+                echo "(pattern-path-writable \"$SLOS_INSTALL_DIR/patterns\")"
+                echo "(gradient-path-writable \"$SLOS_INSTALL_DIR/gradients\")"
+            } >> "$SLOS_GIMPRC"
+        fi
+    fi
+
+    SUMMARY+=("SLOS-GIMPainter|$INSTALLATION_MESSAGE")
+}
 
 # LinuxBeaver GEGL plugins for Flatpak GIMP 3.x
-LINUXBEAVER_PLUGIN_DIR="$HOME/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins"
-LINUXBEAVER_MANIFEST="$HOME/.local/share/LinuxBeaver-GEGL-plugins.manifest"
-LINUXBEAVER_TEMP_DIR="$(mktemp -d)"
+install_linuxbeaver() {
+    print_step "Installing LinuxBeaver GEGL Plugins"
 
-mkdir -p "$LINUXBEAVER_PLUGIN_DIR" "$(dirname "$LINUXBEAVER_MANIFEST")"
+    local LINUXBEAVER_PLUGIN_DIR="$HOME/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins"
+    local LINUXBEAVER_MANIFEST="$HOME/.local/share/LinuxBeaver-GEGL-plugins.manifest"
+    local LINUXBEAVER_TEMP_DIR
+    LINUXBEAVER_TEMP_DIR="$(mktemp -d)"
 
-curl -fsSL https://github.com/LinuxBeaver/LinuxBeaver/releases/download/Gimp_GEGL_Plugin_download_page/LinuxBinaries_all_plugins.zip \
--o "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip"
-unzip -q "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip" -d "$LINUXBEAVER_TEMP_DIR/extracted"
+    if file_exists "$LINUXBEAVER_MANIFEST"; then
+        print_info "⏭️ LinuxBeaver already installed"
+        SUMMARY+=("LinuxBeaver|⏭️ Already installed")
+        return
+    fi
 
-LINUXBEAVER_PLUGIN_COUNT="$(find "$LINUXBEAVER_TEMP_DIR/extracted" -maxdepth 3 -type f -name '*.so' -print | wc -l)"
-if [ "$LINUXBEAVER_PLUGIN_COUNT" -eq 0 ]; then
-echo "No LinuxBeaver GEGL plugin binaries were found in the downloaded archive."
-exit 1
-fi
+    run mkdir -p "$LINUXBEAVER_PLUGIN_DIR" "$(dirname "$LINUXBEAVER_MANIFEST")"
 
-if [ -f "$LINUXBEAVER_MANIFEST" ]; then
-while IFS= read -r LINUXBEAVER_PLUGIN_NAME; do
-case "$LINUXBEAVER_PLUGIN_NAME" in
-*/*) ;;
-*.so) rm -f "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME" ;;
-esac
-done < "$LINUXBEAVER_MANIFEST"
-fi
+    run curl -fsSL ... \
+        -o "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip"
 
-: > "$LINUXBEAVER_MANIFEST"
-while IFS= read -r -d '' LINUXBEAVER_PLUGIN_FILE; do
-LINUXBEAVER_PLUGIN_NAME="$(basename "$LINUXBEAVER_PLUGIN_FILE")"
-install -m 755 "$LINUXBEAVER_PLUGIN_FILE" "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME"
-printf '%s\n' "$LINUXBEAVER_PLUGIN_NAME" >> "$LINUXBEAVER_MANIFEST"
-done < <(find "$LINUXBEAVER_TEMP_DIR/extracted" -maxdepth 3 -type f -name '*.so' -print0)
+    run unzip -q \
+        "$LINUXBEAVER_TEMP_DIR/LinuxBinaries_all_plugins.zip" \
+        -d "$LINUXBEAVER_TEMP_DIR/extracted"
 
-rm -rf "$LINUXBEAVER_TEMP_DIR"
+    if [[ "$DRY_RUN" == false ]]; then
+        local LINUXBEAVER_PLUGIN_COUNT
+        LINUXBEAVER_PLUGIN_COUNT="$(find "$LINUXBEAVER_TEMP_DIR/extracted" \
+            -maxdepth 3 \
+            -type f \
+            -name '*.so' \
+            -print | wc -l)"
+
+        if [[ "$LINUXBEAVER_PLUGIN_COUNT" -eq 0 ]]; then
+            print_info "No LinuxBeaver GEGL plugin binaries were found in the downloaded archive."
+            exit 1
+        fi
+
+        if [[ -f "$LINUXBEAVER_MANIFEST" ]]; then
+            while IFS= read -r LINUXBEAVER_PLUGIN_NAME; do
+                case "$LINUXBEAVER_PLUGIN_NAME" in
+                    */*) ;;
+                    *.so) rm -f "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME" ;;
+                esac
+            done < "$LINUXBEAVER_MANIFEST"
+        fi
+
+        : > "$LINUXBEAVER_MANIFEST"
+
+        while IFS= read -r -d '' LINUXBEAVER_PLUGIN_FILE; do
+            LINUXBEAVER_PLUGIN_NAME="$(basename "$LINUXBEAVER_PLUGIN_FILE")"
+            install -m 755 "$LINUXBEAVER_PLUGIN_FILE" "$LINUXBEAVER_PLUGIN_DIR/$LINUXBEAVER_PLUGIN_NAME"
+            printf '%s\n' "$LINUXBEAVER_PLUGIN_NAME" >> "$LINUXBEAVER_MANIFEST"
+        done < <(find "$LINUXBEAVER_TEMP_DIR/extracted" \
+            -maxdepth 3 \
+            -type f \
+            -name '*.so' \
+            -print0)
+    fi
+
+    run rm -rf "$LINUXBEAVER_TEMP_DIR"
+
+    SUMMARY+=("LinuxBeaver|$INSTALLATION_MESSAGE")
+}
 
 # GIMP AI Plugin for Flatpak GIMP 3.x (OpenAI-powered: Inpainting, Image Generator, etc.)
-GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
-    "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
-    | tr ' ' '\n' | sort -V -r | while IFS= read -r ver; do
-        minor=$(echo "$ver" | cut -d. -f2)
-        [ -n "$minor" ] && [ "$(( minor % 2 ))" -eq 0 ] && echo "$ver" && break
-    done)
-if [ -z "$GIMP_AI_DETECTED_VERSION" ]; then
-    GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
-        "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
-        | tr ' ' '\n' | sort -V | tail -1)
-fi
+install_gimp_ai_plugin() {
+    print_step "Installing GIMP AI Plugin"
 
-if [ -z "$GIMP_AI_DETECTED_VERSION" ]; then
-    echo "GIMP config directory not found — open GIMP once after setup, then re-run to install the GIMP AI Plugin."
-else
-    GIMP_AI_PLUGIN_DIR="$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin"
-    GIMP_AI_TEMP_DIR=$(mktemp -d)
-    GIMP_AI_TAG=$(curl -fsSL https://api.github.com/repos/lukaso/gimp-ai/releases/latest \
-        | jq -r '.tag_name')
-    GIMP_AI_ZIP_URL="https://github.com/lukaso/gimp-ai/releases/download/${GIMP_AI_TAG}/gimp-ai-plugin-${GIMP_AI_TAG}.zip"
-    curl -fsSL "$GIMP_AI_ZIP_URL" -o "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip"
-    unzip -q "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip" -d "$GIMP_AI_TEMP_DIR/extracted"
-    mkdir -p "$GIMP_AI_PLUGIN_DIR"
-    find "$GIMP_AI_TEMP_DIR/extracted" -name "gimp-ai-plugin.py" \
-        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
-    find "$GIMP_AI_TEMP_DIR/extracted" -name "coordinate_utils.py" \
-        -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
-    chmod +x "$GIMP_AI_PLUGIN_DIR/gimp-ai-plugin.py"
-    chmod +x "$GIMP_AI_PLUGIN_DIR/coordinate_utils.py"
-    find "$HOME/.var/app/org.gimp.GIMP/" -name "pluginrc" -delete 2>/dev/null || true
-    find "$HOME/.config/GIMP/" -name "pluginrc" -delete 2>/dev/null || true
-    rm -rf "$GIMP_AI_TEMP_DIR"
-fi
+    local GIMP_AI_DETECTED_VERSION=""
 
-# Tailscale
-curl -fsSL https://tailscale.com/install.sh | sh
+    if [[ "$DRY_RUN" == false ]]; then
+        GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
+            "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
+            | tr ' ' '\n' | sort -V -r | while IFS= read -r ver; do
+                minor=$(echo "$ver" | cut -d. -f2)
+                [[ -n "$minor" ]] && (( minor % 2 == 0 )) && {
+                    echo "$ver"
+                    break
+                }
+            done)
+    fi
 
-# DaVinci Resolve
-DAVINCI_RUN="$HOME/Downloads/DaVinci_Resolve_21.0_Linux/DaVinci_Resolve_21.0_Linux.run"
-if [ -f "$DAVINCI_RUN" ]; then
-sudo SKIP_PACKAGE_CHECK=1 "$DAVINCI_RUN" -i
-cd /opt/resolve/libs
-sudo mkdir -p oldlibs
-sudo mv libglib* oldlibs/ 2>/dev/null || true
-sudo mv libgio* oldlibs/ 2>/dev/null || true
-sudo mv libgmodule* oldlibs/ 2>/dev/null || true
-sudo mv libgobject* oldlibs/ 2>/dev/null || true
-fi
+    if file_exists "$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin/gimp-ai-plugin.py"; then
+        print_info "⏭️ GIMP AI Plugin already installed"
+        SUMMARY+=("GIMP AI Plugin|⏭️ Already installed")
+        return
+    fi
+    
+    if [[ -z "$GIMP_AI_DETECTED_VERSION" ]]; then
+        GIMP_AI_DETECTED_VERSION=$(flatpak run --command=bash org.gimp.GIMP -c \
+            "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null \
+            | tr ' ' '\n' | sort -V | tail -1)
+    fi
 
-# Keyboard shortcuts
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/name "'CopyQ Toggle'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/command "'copyq toggle'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom0/binding "['<Alt>v']"
+    if [[ -z "$GIMP_AI_DETECTED_VERSION" ]]; then
+        print_info "GIMP config directory not found — open GIMP once after setup, then re-run to install the GIMP AI Plugin."
+    else
+        local GIMP_AI_PLUGIN_DIR="$HOME/.config/GIMP/$GIMP_AI_DETECTED_VERSION/plug-ins/gimp-ai-plugin"
+        local GIMP_AI_TEMP_DIR
+        GIMP_AI_TEMP_DIR="$(mktemp -d)"
+        local GIMP_AI_TAG
+        GIMP_AI_TAG=$(curl -fsSL https://api.github.com/repos/lukaso/gimp-ai/releases/latest \
+            | jq -r '.tag_name')
+        local GIMP_AI_ZIP_URL
+        GIMP_AI_ZIP_URL="https://github.com/lukaso/gimp-ai/releases/download/${GIMP_AI_TAG}/gimp-ai-plugin-${GIMP_AI_TAG}.zip"
+        run curl -fsSL "$GIMP_AI_ZIP_URL" -o "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip"
+        run unzip -q "$GIMP_AI_TEMP_DIR/gimp-ai-plugin.zip" -d "$GIMP_AI_TEMP_DIR/extracted"
+        run mkdir -p "$GIMP_AI_PLUGIN_DIR"
+        run find "$GIMP_AI_TEMP_DIR/extracted" -name "gimp-ai-plugin.py" \
+            -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
+        run find "$GIMP_AI_TEMP_DIR/extracted" -name "coordinate_utils.py" \
+            -exec cp {} "$GIMP_AI_PLUGIN_DIR/" \;
+        run chmod +x "$GIMP_AI_PLUGIN_DIR/gimp-ai-plugin.py"
+        run chmod +x "$GIMP_AI_PLUGIN_DIR/coordinate_utils.py"
+        run find "$HOME/.var/app/org.gimp.GIMP/" -name "pluginrc" -delete 2>/dev/null || true
+        run find "$HOME/.config/GIMP/" -name "pluginrc" -delete
+        run rm -rf "$GIMP_AI_TEMP_DIR"
+    fi
 
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/name "'NormCap'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/command "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom1/binding "['<Alt>t']"
+    SUMMARY+=("GIMP AI Plugin|$INSTALLATION_MESSAGE")
+}
 
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/name "'Emojify'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/command "'/usr/bin/flatpak run xyz.riothedev.emojify'"
-dconf write /org/cinnamon/desktop/keybindings/custom-keybindings/custom2/binding "['<Alt>e']"
+install_gimp_ecosystem() {
+    print_step "Installing GIMP ecosystem"
 
-dconf write /org/cinnamon/desktop/keybindings/custom-list "['custom0', 'custom1', 'custom2']"
+    install_ai_remove_background
 
-# Built-in screenshot shortcuts
-dconf write /org/cinnamon/desktop/keybindings/media-keys/area-screenshot-clip "['<Alt>c']"
-dconf write /org/cinnamon/desktop/keybindings/media-keys/screenshot-clip "['<Shift><Super>s']"
+    install_photogimp
 
-# CopyQ autostart
-mkdir -p ~/.config/autostart
-cat > ~/.config/autostart/copyq.desktop << EOF
+    install_slos_gimppainter
+
+    install_linuxbeaver
+
+    install_gimp_ai_plugin
+}
+
+install_tailscale() {
+    print_step "Installing Tailscale"
+
+    if binary_exists tailscale; then
+        print_info "⏭️ Tailscale already installed"
+        SUMMARY+=("Tailscale|⏭️ Already installed")
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ curl -fsSL https://tailscale.com/install.sh | sh"
+    else
+        curl -fsSL https://tailscale.com/install.sh | sh
+    fi
+    SUMMARY+=("Tailscale|$INSTALLATION_MESSAGE")
+}
+
+install_davinci() {
+
+    print_step "Installing DaVinci Resolve"
+
+    #
+    # Already installed?
+    #
+    if directory_exists "/opt/resolve"; then
+        print_info "⏭️ DaVinci Resolve already installed"
+        SUMMARY+=("DaVinci Resolve|⏭️ Already installed")
+        return
+    fi
+
+    #
+    # Installer exists?
+    #
+    if ! file_exists "$DAVINCI_RUN"; then
+        print_info "Installer not found:"
+        print_info "  $DAVINCI_RUN"
+        print_info
+        SUMMARY+=("DaVinci Resolve|⏭️ Installer not found")
+        return
+    fi
+
+    #
+    # Install
+    #
+    print_info "Running installer..."
+
+    run chmod +x "$DAVINCI_RUN"
+
+    run sudo "$DAVINCI_RUN" -i
+
+    SUMMARY+=("DaVinci Resolve|$INSTALLATION_MESSAGE")
+}
+
+shortcut_matches() {
+    local base="$1"
+    local expected_name="$2"
+    local expected_command="$3"
+    local expected_binding="$4"
+
+    local current_name
+    local current_command
+    local current_binding
+
+    current_name=$(dconf read "$base/name")
+    current_command=$(dconf read "$base/command")
+    current_binding=$(dconf read "$base/binding")
+
+    values_match "$current_name" "$expected_name" &&
+    values_match "$current_command" "$expected_command" &&
+    values_match "$current_binding" "$expected_binding"
+}
+
+configure_shortcut() {
+    local base="$1"
+    local name="$2"
+    local command="$3"
+    local binding="$4"
+
+    run dconf write "$base/name" "$name"
+    run dconf write "$base/command" "$command"
+    run dconf write "$base/binding" "$binding"
+}
+
+configure_keyboard_shortcuts() {
+    print_step "Configuring Keyboard Shortcuts"
+
+    local base="/org/cinnamon/desktop/keybindings/custom-keybindings"
+
+    if shortcut_matches \
+        "$base/custom0" \
+        "'CopyQ Toggle'" \
+        "'copyq toggle'" \
+        "['<Alt>v']" &&
+        shortcut_matches \
+            "$base/custom1" \
+            "'NormCap'" \
+            "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'" \
+            "['<Alt>t']" &&
+        shortcut_matches \
+            "$base/custom2" \
+            "'Emojify'" \
+            "'/usr/bin/flatpak run xyz.riothedev.emojify'" \
+            "['<Alt>e']"
+    then
+        print_info "⏭️ Keyboard shortcuts already configured"
+        SUMMARY+=("Keyboard Shortcuts|⏭️ Already configured")
+        return
+    else
+        configure_shortcut \
+            "$base/custom0" \
+            "'CopyQ Toggle'" \
+            "'copyq toggle'" \
+            "['<Alt>v']"
+
+        configure_shortcut \
+            "$base/custom1" \
+            "'NormCap'" \
+            "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'" \
+            "['<Alt>t']"
+
+        configure_shortcut \
+            "$base/custom2" \
+            "'Emojify'" \
+            "'/usr/bin/flatpak run xyz.riothedev.emojify'" \
+            "['<Alt>e']"
+
+        SUMMARY+=("Keyboard Shortcuts|$CONFIGURATION_MESSAGE")
+    fi
+}
+
+configure_copyq() {
+    print_step "Configuring CopyQ"
+
+    if file_exists ~/.config/autostart/copyq.desktop; then
+        print_info "⏭️ CopyQ already configured"
+        SUMMARY+=("CopyQ|⏭️ Already configured")
+        return
+    fi
+
+    run mkdir -p ~/.config/autostart
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ Create CopyQ autostart file"
+    else
+        cat > ~/.config/autostart/copyq.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=CopyQ
@@ -345,10 +1158,88 @@ Hidden=false
 NoDisplay=false
 X-GNOME-Autostart-enabled=true
 EOF
-# Software Manager & Update Manager preferences
-gsettings set com.linuxmint.install show-unverified true 2>/dev/null || true
-gsettings set com.linuxmint.updates auto-update true 2>/dev/null || true
-gsettings set com.linuxmint.updates auto-refresh true 2>/dev/null || true
-echo "=================================================="
-echo " Setup complete!"
-echo "=================================================="
+    fi
+
+    SUMMARY+=("CopyQ|$CONFIGURATION_MESSAGE")
+}
+
+configure_update_manager() {
+    print_step "Configuring Update Manager"
+
+    local current_show_unverified
+    local current_auto_update
+    local current_auto_refresh
+
+    current_show_unverified="$(gsettings get com.linuxmint.install show-unverified 2>/dev/null || true)"
+    current_auto_update="$(gsettings get com.linuxmint.updates auto-update 2>/dev/null || true)"
+    current_auto_refresh="$(gsettings get com.linuxmint.updates auto-refresh 2>/dev/null || true)"
+
+    if values_match "$current_show_unverified" "true" &&
+       values_match "$current_auto_update" "true" &&
+       values_match "$current_auto_refresh" "true"
+    then
+        print_info "⏭️ Update Manager already configured"
+        SUMMARY+=("Update Manager|⏭️ Already configured")
+        return
+    fi
+
+    run gsettings set com.linuxmint.install show-unverified true
+    run gsettings set com.linuxmint.updates auto-update true
+    run gsettings set com.linuxmint.updates auto-refresh true
+
+    SUMMARY+=("Update Manager|$CONFIGURATION_MESSAGE")
+}
+
+install_system() {
+    install_apt_packages
+
+    install_remote_mouse
+
+    install_balena_etcher
+
+    install_immich_go
+
+    install_snap_packages
+
+    install_flatpak_packages
+
+    install_gimp_ecosystem
+
+    install_tailscale
+
+    install_davinci
+
+    configure_keyboard_shortcuts
+
+    configure_copyq
+    
+    configure_update_manager
+
+    print_section "Setup complete!"
+}
+
+main() {
+    parse_arguments "$@"
+
+    initialize_logging
+
+    write_log_header
+
+    print_header
+
+    initialize
+
+    install_system
+
+    local end_time
+    end_time=$(date +%s)
+
+    local elapsed=$((end_time - START_TIME))
+
+    print_summary "$elapsed"
+
+    write_log_footer "$elapsed"
+}
+
+main "$@"
+
