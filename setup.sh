@@ -14,7 +14,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 
 # Load configuration
-source "$SCRIPT_DIR/config.sh"
+CONFIG_FILE="$SCRIPT_DIR/config.sh"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+    source "$CONFIG_FILE"
+fi
 
 readonly VERSION="0.1.0"
 START_TIME=$(date +%s)
@@ -1033,7 +1037,6 @@ install_tailscale() {
 }
 
 install_davinci() {
-
     print_step "Installing DaVinci Resolve"
 
     #
@@ -1046,12 +1049,20 @@ install_davinci() {
     fi
 
     #
+    # Configured?
+    #
+    if [[ -z "${DAVINCI_RUN:-}" ]]; then
+        print_info "⏭️ DaVinci Resolve installer not configured"
+        SUMMARY+=("DaVinci Resolve|⏭️ Not configured")
+        return
+    fi
+
+    #
     # Installer exists?
     #
     if ! file_exists "$DAVINCI_RUN"; then
-        print_info "Installer not found:"
-        print_info "  $DAVINCI_RUN"
-        print_info
+        print_info "⏭️ DaVinci Resolve installer not found"
+        print_info "   $DAVINCI_RUN"
         SUMMARY+=("DaVinci Resolve|⏭️ Installer not found")
         return
     fi
@@ -1062,7 +1073,6 @@ install_davinci() {
     print_info "Running installer..."
 
     run chmod +x "$DAVINCI_RUN"
-
     run sudo "$DAVINCI_RUN" -i
 
     SUMMARY+=("DaVinci Resolve|$INSTALLATION_MESSAGE")

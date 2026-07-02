@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+########################################
+# Linux Mint Setup configuration
+########################################
+
+#
+# Path to the DaVinci Resolve installer (.run)
+#
+# Leave empty to skip DaVinci installation.
+#
+DAVINCI_RUN=""
