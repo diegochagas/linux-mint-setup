@@ -552,21 +552,22 @@ install_snap_package() {
 #   $1 - Flatpak ID
 ########################################
 install_flatpak_package() {
-    local package="$1"
+    local target="$1"
+    local app_id="${target%%//*}"
 
-    if is_flatpak_installed "$package"; then
-        print_info "⏭️  $package already installed"
+    if is_flatpak_installed "$app_id"; then
+        print_info "⏭️  $app_id already installed"
         return
     fi
 
-    print_step "Installing $package..."
+    print_step "Installing $app_id..."
 
-    run flatpak install -y flathub "$package"
+    run flatpak install -y flathub "$target"
 
     if [[ "$DRY_RUN" == false ]]; then
-        print_info "✅ $package installed"
+        print_info "✅ $app_id installed"
     else
-        print_info "🔄 Would install $package"
+        print_info "🔄 Would install $app_id"
     fi
 }
 
@@ -686,10 +687,19 @@ install_snap_packages() {
 
     SUMMARY+=("Snap Packages|$INSTALLATION_MESSAGE")
 }
+
 install_flatpak_packages() {
     install_flatpak_package org.gimp.GIMP
-    install_flatpak_package org.gimp.GIMP.Plugin.GMic
-    install_flatpak_package org.gimp.GIMP.Plugin.Resynthesizer
+
+    local GIMP_BRANCH="3"
+
+    if [[ "$DRY_RUN" == false ]]; then
+        GIMP_BRANCH="$(flatpak info org.gimp.GIMP --show-branch 2>/dev/null || echo "3")"
+    fi
+
+    install_flatpak_package "org.gimp.GIMP.Plugin.GMic//$GIMP_BRANCH"
+    install_flatpak_package "org.gimp.GIMP.Plugin.Resynthesizer//$GIMP_BRANCH"
+
     install_flatpak_package com.github.dynobo.normcap
     install_flatpak_package com.google.Chrome
     install_flatpak_package xyz.riothedev.emojify
