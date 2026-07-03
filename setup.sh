@@ -1014,9 +1014,9 @@ shortcut_matches() {
     local current_command
     local current_binding
 
-    current_name=$(dconf read "$base/name")
-    current_command=$(dconf read "$base/command")
-    current_binding=$(dconf read "$base/binding")
+    current_name="$(dconf read "$base/name" 2>/dev/null || true)"
+    current_command="$(dconf read "$base/command" 2>/dev/null || true)"
+    current_binding="$(dconf read "$base/binding" 2>/dev/null || true)"
 
     values_match "$current_name" "$expected_name" &&
     values_match "$current_command" "$expected_command" &&
@@ -1038,18 +1038,23 @@ configure_keyboard_shortcuts() {
     print_step "Configuring Keyboard Shortcuts"
 
     local base="/org/cinnamon/desktop/keybindings/custom-keybindings"
+    local shortcut_list="['custom0', 'custom1', 'custom2']"
 
-    if shortcut_matches \
-        "$base/custom0" \
-        "'CopyQ Toggle'" \
-        "'copyq toggle'" \
-        "['<Alt>v']" &&
-        shortcut_matches \
+    local current_list
+    current_list="$(dconf read /org/cinnamon/desktop/keybindings/custom-list 2>/dev/null || true)"
+
+    if values_match "$current_list" "$shortcut_list" &&
+       shortcut_matches \
+            "$base/custom0" \
+            "'CopyQ Toggle'" \
+            "'copyq toggle'" \
+            "['<Alt>v']" &&
+       shortcut_matches \
             "$base/custom1" \
             "'NormCap'" \
             "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'" \
             "['<Alt>t']" &&
-        shortcut_matches \
+       shortcut_matches \
             "$base/custom2" \
             "'Emojify'" \
             "'/usr/bin/flatpak run xyz.riothedev.emojify'" \
@@ -1058,27 +1063,31 @@ configure_keyboard_shortcuts() {
         print_info "⏭️ Keyboard shortcuts already configured"
         SUMMARY+=("Keyboard Shortcuts|⏭️ Already configured")
         return
-    else
-        configure_shortcut \
-            "$base/custom0" \
-            "'CopyQ Toggle'" \
-            "'copyq toggle'" \
-            "['<Alt>v']"
-
-        configure_shortcut \
-            "$base/custom1" \
-            "'NormCap'" \
-            "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'" \
-            "['<Alt>t']"
-
-        configure_shortcut \
-            "$base/custom2" \
-            "'Emojify'" \
-            "'/usr/bin/flatpak run xyz.riothedev.emojify'" \
-            "['<Alt>e']"
-
-        SUMMARY+=("Keyboard Shortcuts|$CONFIGURATION_MESSAGE")
     fi
+
+    configure_shortcut \
+        "$base/custom0" \
+        "'CopyQ Toggle'" \
+        "'copyq toggle'" \
+        "['<Alt>v']"
+
+    configure_shortcut \
+        "$base/custom1" \
+        "'NormCap'" \
+        "'/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=normcap com.github.dynobo.normcap'" \
+        "['<Alt>t']"
+
+    configure_shortcut \
+        "$base/custom2" \
+        "'Emojify'" \
+        "'/usr/bin/flatpak run xyz.riothedev.emojify'" \
+        "['<Alt>e']"
+
+    run dconf write \
+        /org/cinnamon/desktop/keybindings/custom-list \
+        "$shortcut_list"
+
+    SUMMARY+=("Keyboard Shortcuts|$CONFIGURATION_MESSAGE")
 }
 
 configure_copyq() {
