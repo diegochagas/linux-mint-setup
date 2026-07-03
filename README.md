@@ -35,7 +35,6 @@ permissions. Keep an internet connection active while it runs.
 3. Configure automatic system snapshots:
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
 Weekly - Keep 4 > Next > Next > Finish`.
-4. Download and install [AnyDesk](https://anydesk.com/en/downloads/linux) (amd64)
 
 ## What `setup.sh` Does
 
