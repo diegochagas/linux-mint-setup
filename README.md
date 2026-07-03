@@ -92,6 +92,32 @@ setup for its AI Tools feature. See the
 [gimp-setup README](https://github.com/diegochagas/gimp-setup#readme) for
 details, configuration and how to add new GIMP features.
 
+### Homelab Backup Automation
+
+After the other setup steps finish, the script clones
+[homelab-backup](https://github.com/diegochagas/homelab-backup) to:
+
+```text
+~/Projects/homelab-backup
+```
+
+It then applies the systemd user timer configuration from `backup.md`:
+
+- Makes `~/Projects/homelab-backup/backup.sh` executable.
+- Creates `~/.config/systemd/user/homelab-backup.service`.
+- Creates `~/.config/systemd/user/homelab-backup.timer`.
+- Reloads the user systemd daemon.
+- Enables and starts the timer with
+  `systemctl --user enable --now homelab-backup.timer`.
+
+The timer runs the backup daily at 10:00 AM. Because `Persistent=true` is set,
+if the computer is powered off at the scheduled time, the backup runs on the
+next login.
+
+The repository to clone can be overridden with the `HOMELAB_BACKUP_REPO`
+variable in `config.sh`. The clone location remains
+`~/Projects/homelab-backup`, matching the systemd unit configuration.
+
 ### Other Software
 
 - Installs Tailscale using its official installation script.
@@ -119,6 +145,7 @@ It also:
 - Configures CopyQ to start automatically.
 - Allows unverified Flatpak applications to appear in Software Manager.
 - Enables automatic update checks and updates in Update Manager.
+- Configures the Homelab Backup systemd user timer after the other setup steps.
 
 ## Notes
 
@@ -206,6 +233,8 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
 - `immich-go` is installed only on AMD64 and ARM64 systems.
+- Homelab Backup is cloned to `~/Projects/homelab-backup` and scheduled with a
+  user systemd timer.
 - Some operations may already be complete when the script is run again. Review
   any errors before retrying.
 - Type the cedilla character (`ç`) with `AltGr + ,` (comma).

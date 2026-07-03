@@ -72,6 +72,9 @@ FLATPAK_PACKAGES=(
     net.code_industry.MasterPDFEditor
 )
 
+DEFAULT_HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
+DEFAULT_HOMELAB_BACKUP_DIR="$HOME/Projects/homelab-backup"
+
 ########################################
 # Runtime options
 ########################################
@@ -348,6 +351,7 @@ check_dependencies() {
         sudo
         apt
         dpkg
+        systemctl
     )
 
     local missing=()
@@ -959,6 +963,71 @@ configure_update_manager() {
     SUMMARY+=("Update Manager|$CONFIGURATION_MESSAGE")
 }
 
+clone_homelab_backup() {
+    local repo_url="${HOMELAB_BACKUP_REPO:-$DEFAULT_HOMELAB_BACKUP_REPO}"
+    local target_dir="$DEFAULT_HOMELAB_BACKUP_DIR"
+
+    if directory_exists "$target_dir/.git"; then
+        print_info "⏭️ homelab-backup already cloned"
+        return
+    fi
+
+    if directory_exists "$target_dir"; then
+        print_info "❌ homelab-backup target exists but is not a Git repository:"
+        print_info "   $target_dir"
+        exit 1
+    fi
+
+    run mkdir -p "$(dirname "$target_dir")"
+    run git clone "$repo_url" "$target_dir"
+}
+
+configure_homelab_backup() {
+    print_step "Configuring Homelab Backup"
+
+    local target_dir="$DEFAULT_HOMELAB_BACKUP_DIR"
+    local systemd_user_dir="$HOME/.config/systemd/user"
+    local service_file="$systemd_user_dir/homelab-backup.service"
+    local timer_file="$systemd_user_dir/homelab-backup.timer"
+
+    clone_homelab_backup
+
+    run chmod +x "$target_dir/backup.sh"
+    run mkdir -p "$systemd_user_dir"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ Create homelab-backup.service"
+        print_info "➜ Create homelab-backup.timer"
+    else
+        cat > "$service_file" << EOF
+[Unit]
+Description=Homelab Backup
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Projects/homelab-backup
+ExecStart=%h/Projects/homelab-backup/backup.sh
+EOF
+
+        cat > "$timer_file" << EOF
+[Unit]
+Description=Run Homelab Backup
+
+[Timer]
+OnCalendar=*-*-* 10:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    fi
+
+    run systemctl --user daemon-reload
+    run systemctl --user enable --now homelab-backup.timer
+
+    SUMMARY+=("Homelab Backup|$CONFIGURATION_MESSAGE")
+}
+
 install_system() {
     install_apt_packages
 
@@ -983,6 +1052,8 @@ install_system() {
     configure_copyq
     
     configure_update_manager
+
+    configure_homelab_backup
 
     print_section "Setup complete!"
 }
@@ -1019,4 +1090,3 @@ main() {
 }
 
 main "$@"
-

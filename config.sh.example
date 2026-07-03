@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2034
+
 ########################################
 # Linux Mint Setup configuration
 ########################################
@@ -19,6 +21,14 @@ DAVINCI_RUN=""
 # or a local clone.
 #
 GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"
+
+#
+# Homelab backup repository
+#
+# Cloned to ~/Projects/homelab-backup and configured with
+# a systemd user timer that runs daily at 10:00 AM.
+#
+HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 
 #
 # Google Gemini API key, forwarded to the GIMP setup
