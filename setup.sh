@@ -55,6 +55,8 @@ APT_PACKAGES=(
     tree
     shellcheck
     virtualbox
+    docker.io
+    docker-compose-v2
 )
 
 SNAP_PACKAGES=(
