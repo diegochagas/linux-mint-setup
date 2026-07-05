@@ -57,6 +57,7 @@ APT_PACKAGES=(
     virtualbox
     docker.io
     docker-compose-v2
+    gh
 )
 
 SNAP_PACKAGES=(
