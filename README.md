@@ -79,15 +79,7 @@ an existing GIMP install, run the (idempotent) `gimp-setup/setup.sh`
 directly.
 
 Otherwise the script clones that repository and runs its `setup.sh`, which
-installs and configures with a single command:
-
-- Flatpak GIMP with the G'MIC and Resynthesizer plug-ins
-- PhotoGIMP (Photoshop-inspired interface)
-- The Photoshop keymap for GIMP
-- SLOS-GIMPainter brushes and presets
-- LinuxBeaver GEGL plug-ins
-- The AI plug-ins: AI Remove Background, Generative Fill and
-  AI Remove Selection
+installs and configures with a single command the features listed in [gimp-setup/docs/](https://github.com/diegochagas/gimp-setup/tree/main/docs)
 
 The repository to clone can be overridden with the `GIMP_SETUP_REPO` variable
 in `config.sh`, and the `GEMINI_API_KEY` / `OPENAI_API_KEY` values set there
