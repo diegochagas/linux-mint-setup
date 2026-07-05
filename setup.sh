@@ -315,20 +315,6 @@ directory_exists() {
     [[ -d "$1" ]]
 }
 
-gimp_profile_dirs() {
-    shopt -s nullglob
-    local candidates=(
-        "$HOME"/.config/GIMP/3.*
-        "$HOME"/.var/app/org.gimp.GIMP/config/GIMP/3.*
-    )
-    shopt -u nullglob
-
-    local dir
-    for dir in "${candidates[@]}"; do
-        [[ -d "$dir" ]] && echo "$dir"
-    done
-}
-
 ########################################
 # Checks whether a command succeeds.
 #
@@ -747,161 +733,6 @@ install_flatpak_packages() {
     fi
 }
 
-gimp_flatpak_plugins_are_installed() {
-    local gimp_branch="3"
-
-    if ! is_flatpak_installed org.gimp.GIMP; then
-        return 1
-    fi
-
-    gimp_branch="$(flatpak info org.gimp.GIMP | sed -n 's/^Branch:[[:space:]]*//p')"
-    gimp_branch="${gimp_branch:-3}"
-
-    is_flatpak_installed org.gimp.GIMP.Plugin.GMic &&
-        is_flatpak_installed org.gimp.GIMP.Plugin.Resynthesizer &&
-        flatpak info "org.gimp.GIMP.Plugin.GMic//$gimp_branch" >/dev/null 2>&1 &&
-        flatpak info "org.gimp.GIMP.Plugin.Resynthesizer//$gimp_branch" >/dev/null 2>&1
-}
-
-ai_remove_background_is_installed() {
-    file_exists "$HOME/.config/GIMP/3.0/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py" ||
-        file_exists "$HOME/.config/GIMP/3.2/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py" ||
-        file_exists "$HOME/.var/app/org.gimp.GIMP/config/GIMP/3.2/plug-ins/ai-remove-background-g3/ai-remove-background-g3.py"
-}
-
-photogimp_is_installed() {
-    file_exists "$HOME/.config/GIMP/.photogimp-installed"
-}
-
-slos_gimpainter_is_installed() {
-    directory_exists "$HOME/.local/share/SLOS-GIMPainter"
-}
-
-linuxbeaver_is_installed() {
-    file_exists "$HOME/.local/share/LinuxBeaver-GEGL-plugins.manifest"
-}
-
-detect_gimp_ai_plugin_version() {
-    local detected_version=""
-
-    detected_version="$(
-        flatpak run --command=bash org.gimp.GIMP -c \
-            "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null |
-        tr ' ' '\n' |
-        sort -V -r |
-        while IFS= read -r ver; do
-            minor=$(echo "$ver" | cut -d. -f2)
-
-            if [[ -n "$minor" ]] && (( minor % 2 == 0 )); then
-                echo "$ver"
-                break
-            fi
-        done
-    )"
-
-    if [[ -z "$detected_version" ]]; then
-        detected_version="$(
-            flatpak run --command=bash org.gimp.GIMP -c \
-                "ls ~/.config/GIMP/ 2>/dev/null" 2>/dev/null |
-            tr ' ' '\n' |
-            sort -V |
-            tail -1
-        )"
-    fi
-
-    echo "$detected_version"
-}
-
-gimp_ai_plugin_is_installed() {
-    local detected_version
-    detected_version="$(detect_gimp_ai_plugin_version)"
-
-    [[ -n "$detected_version" ]] &&
-        file_exists "$HOME/.config/GIMP/$detected_version/plug-ins/gimp-ai-plugin/gimp-ai-plugin.py"
-}
-
-menu_shortcuts_are_configured() {
-    local profiles
-    mapfile -t profiles < <(gimp_profile_dirs)
-
-    if (( ${#profiles[@]} == 0 )); then
-        return 1
-    fi
-
-    local shortcuts=(
-        'image-scale|<Primary><Alt>i'
-        'image-resize|<Primary><Alt>c'
-    )
-
-    if [[ -n "${GIMP_SHORTCUTS[*]:-}" ]]; then
-        local entry action binding
-        for entry in "${GIMP_SHORTCUTS[@]}"; do
-            IFS='|' read -r action binding _ <<< "$entry"
-            shortcuts+=("$action|$binding")
-        done
-    fi
-
-    local dir rc shortcut expected
-    for dir in "${profiles[@]}"; do
-        rc="$dir/shortcutsrc"
-
-        for shortcut in "${shortcuts[@]}"; do
-            IFS='|' read -r action binding <<< "$shortcut"
-            expected="(action \"$action\" \"$binding\")"
-
-            if ! file_exists "$rc" || ! grep -Fq "$expected" "$rc"; then
-                return 1
-            fi
-        done
-    done
-}
-
-ai_tools_are_installed() {
-    local gimp_setup_dir="$1"
-    local src="$gimp_setup_dir/assets/plug-ins/photogimp-ai/photogimp-ai.py"
-
-    if ! file_exists "$src"; then
-        return 1
-    fi
-
-    local profiles
-    mapfile -t profiles < <(gimp_profile_dirs)
-
-    if (( ${#profiles[@]} == 0 )); then
-        return 1
-    fi
-
-    local dir dest
-    for dir in "${profiles[@]}"; do
-        dest="$dir/plug-ins/photogimp-ai/photogimp-ai.py"
-
-        if ! file_exists "$dest" || ! cmp -s "$src" "$dest"; then
-            return 1
-        fi
-    done
-}
-
-gemini_api_key_is_configured() {
-    local key_file="$HOME/.config/PhotoGIMP/gemini-api-key"
-
-    [[ -z "${GEMINI_API_KEY:-}" ]] ||
-        (file_exists "$key_file" && values_match "$(cat "$key_file")" "$GEMINI_API_KEY")
-}
-
-gimp_ecosystem_is_installed() {
-    local gimp_setup_dir="$1"
-
-    gimp_flatpak_plugins_are_installed &&
-        ai_remove_background_is_installed &&
-        photogimp_is_installed &&
-        slos_gimpainter_is_installed &&
-        linuxbeaver_is_installed &&
-        gimp_ai_plugin_is_installed &&
-        menu_shortcuts_are_configured &&
-        ai_tools_are_installed "$gimp_setup_dir" &&
-        gemini_api_key_is_configured
-}
-
 ########################################
 # Installs the complete GIMP ecosystem
 # (Flatpak GIMP, plug-ins, resources and
@@ -910,27 +741,35 @@ gimp_ecosystem_is_installed() {
 #
 #   https://github.com/diegochagas/gimp-setup
 #
+# GIMP itself is the marker for the whole
+# ecosystem: if the GIMP Flatpak is
+# already installed, nothing GIMP-related
+# is (re)installed. The fine-grained,
+# per-feature detection lives in
+# gimp-setup's own idempotent setup.sh —
+# run it directly to add missing pieces
+# to an existing install.
+#
 # The repository is cloned to a temporary
 # directory and its own setup.sh does the
-# work. Configuration values (for example,
-# GEMINI_API_KEY) are forwarded through
-# the environment.
+# work. Configuration values (the API
+# keys) are forwarded through the
+# environment.
 ########################################
 install_gimp_ecosystem() {
     print_step "Installing GIMP ecosystem"
+
+    if is_flatpak_installed org.gimp.GIMP; then
+        print_info "⏭️ GIMP already installed — skipping the GIMP ecosystem"
+        SUMMARY+=("GIMP Ecosystem|⏭️ Already installed")
+        return
+    fi
 
     local GIMP_SETUP_REPO_URL="${GIMP_SETUP_REPO:-https://github.com/diegochagas/gimp-setup.git}"
     local GIMP_SETUP_DIR
     GIMP_SETUP_DIR="$(mktemp -d)"
 
     run git clone --depth 1 "$GIMP_SETUP_REPO_URL" "$GIMP_SETUP_DIR"
-
-    if [[ "$DRY_RUN" == false ]] && gimp_ecosystem_is_installed "$GIMP_SETUP_DIR"; then
-        print_info "⏭️ GIMP ecosystem already installed"
-        run rm -rf "$GIMP_SETUP_DIR"
-        SUMMARY+=("GIMP Ecosystem|⏭️ Already installed")
-        return
-    fi
 
     local GIMP_SETUP_ARGS=()
 
@@ -939,6 +778,7 @@ install_gimp_ecosystem() {
     fi
 
     export GEMINI_API_KEY="${GEMINI_API_KEY:-}"
+    export OPENAI_API_KEY="${OPENAI_API_KEY:-}"
 
     run bash "$GIMP_SETUP_DIR/setup.sh" "${GIMP_SETUP_ARGS[@]}"
 

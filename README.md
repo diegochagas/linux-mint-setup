@@ -73,20 +73,25 @@ The script installs Flatpak, adds Flathub, and installs:
 The complete GIMP ecosystem lives in its own repository:
 [gimp-setup](https://github.com/diegochagas/gimp-setup).
 
-The script clones that repository and runs its `setup.sh`, which installs and
-configures with a single command:
+If the GIMP Flatpak is already installed, this step is skipped entirely —
+GIMP itself is the marker for the whole ecosystem. To add missing pieces to
+an existing GIMP install, run the (idempotent) `gimp-setup/setup.sh`
+directly.
+
+Otherwise the script clones that repository and runs its `setup.sh`, which
+installs and configures with a single command:
 
 - Flatpak GIMP with the G'MIC and Resynthesizer plug-ins
-- AI Remove Background plug-in
 - PhotoGIMP (Photoshop-inspired interface)
+- The Photoshop keymap for GIMP
 - SLOS-GIMPainter brushes and presets
 - LinuxBeaver GEGL plug-ins
-- GIMP AI Plugin (OpenAI-powered)
-- Extra features: Photoshop-style menu shortcuts and the PhotoGIMP AI tools
+- The AI plug-ins: AI Remove Background, Generative Fill and
+  AI Remove Selection
 
 The repository to clone can be overridden with the `GIMP_SETUP_REPO` variable
-in `config.sh`, and a `GEMINI_API_KEY` set there is forwarded to the GIMP
-setup for its AI Tools feature. See the
+in `config.sh`, and the `GEMINI_API_KEY` / `OPENAI_API_KEY` values set there
+are forwarded to the GIMP setup for its AI plug-ins. See the
 [gimp-setup README](https://github.com/diegochagas/gimp-setup#readme) for
 details, configuration and how to add new GIMP features.
 

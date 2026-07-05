@@ -32,10 +32,19 @@ HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 
 #
 # Google Gemini API key, forwarded to the GIMP setup
-# for its AI Tools feature (Filters > AI).
+# for its AI plug-ins (Filters > AI).
 #
 # Get a free key at https://aistudio.google.com/apikey
 #
 # Leave empty to configure it later.
 #
 GEMINI_API_KEY=""
+
+#
+# OpenAI API key, forwarded to the GIMP setup for the
+# GIMP AI Plugin's OpenAI provider (paid, from
+# https://platform.openai.com/api-keys).
+#
+# Leave empty to configure it later.
+#
+OPENAI_API_KEY=""
