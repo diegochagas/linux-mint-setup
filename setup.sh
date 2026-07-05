@@ -1006,6 +1006,53 @@ install_davinci() {
     SUMMARY+=("DaVinci Resolve|$INSTALLATION_MESSAGE")
 }
 
+install_claude_desktop() {
+    print_step "Installing Claude Desktop"
+
+    #
+    # Already installed?
+    #
+    if is_apt_installed claude-desktop; then
+        print_info "⏭️ Claude Desktop already installed"
+        SUMMARY+=("Claude Desktop|⏭️ Already installed")
+        return
+    fi
+
+    #
+    # Supported architecture?
+    #
+    if [[ "$ARCHITECTURE" != "amd64" && "$ARCHITECTURE" != "arm64" ]]; then
+        print_info "⏭️ Claude Desktop not supported on $ARCHITECTURE"
+        SUMMARY+=("Claude Desktop|⏭️ Unsupported architecture")
+        return
+    fi
+
+    #
+    # Add Anthropic's APT repository
+    #
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ curl ... | sudo tee /usr/share/keyrings/claude-desktop-archive-keyring.asc"
+    else
+        sudo curl -fsSLo /usr/share/keyrings/claude-desktop-archive-keyring.asc \
+            https://downloads.claude.ai/claude-desktop/key.asc
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ Create claude-desktop.list"
+    else
+        echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/claude-desktop-archive-keyring.asc] https://downloads.claude.ai/claude-desktop/apt/stable stable main" \
+            | sudo tee /etc/apt/sources.list.d/claude-desktop.list >/dev/null
+    fi
+
+    #
+    # Install
+    #
+    run sudo apt update
+    run sudo apt install -y claude-desktop
+
+    SUMMARY+=("Claude Desktop|$INSTALLATION_MESSAGE")
+}
+
 shortcut_matches() {
     local base="$1"
     local expected_name="$2"
@@ -1278,6 +1325,8 @@ install_system() {
     install_tailscale
 
     install_davinci
+
+    install_claude_desktop
 
     configure_keyboard_shortcuts
 

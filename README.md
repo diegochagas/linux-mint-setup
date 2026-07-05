@@ -29,10 +29,8 @@ permissions. Keep an internet connection active while it runs.
 
 ## Step 3 - Manual Post-Install Steps
 
-1. Install Claude Desktop for Linux by following the instructions in the
-   [claude-desktop-debian repository](https://github.com/aaddrick/claude-desktop-debian).
-2. Install the fonts located in the `Softwares` folder.
-3. Configure automatic system snapshots:
+1. Install the fonts located in the `Softwares` folder.
+2. Configure automatic system snapshots:
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
 Weekly - Keep 4 > Next > Next > Finish`.
 
@@ -127,6 +125,9 @@ variable in `config.sh`. The clone location remains
   Step 1.
 - Moves selected bundled DaVinci Resolve libraries into
   `/opt/resolve/libs/oldlibs` to improve compatibility with Linux Mint.
+- Installs [Claude Desktop](https://claude.ai/download) by adding Anthropic's
+  official APT repository and installing the `claude-desktop` package, on
+  AMD64 and ARM64 systems.
 
 ### Desktop Configuration
 
@@ -232,7 +233,7 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 ### Other Notes
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
-- `immich-go` is installed only on AMD64 and ARM64 systems.
+- `immich-go` and Claude Desktop are installed only on AMD64 and ARM64 systems.
 - Homelab Backup is cloned to `~/Projects/homelab-backup` and scheduled with a
   user systemd timer.
 - Some operations may already be complete when the script is run again. Review
