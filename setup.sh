@@ -58,6 +58,7 @@ APT_PACKAGES=(
     docker.io
     docker-compose-v2
     gh
+    nfs-kernel-server
 )
 
 SNAP_PACKAGES=(
@@ -77,6 +78,7 @@ FLATPAK_PACKAGES=(
 
 DEFAULT_HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 DEFAULT_HOMELAB_BACKUP_DIR="$HOME/Projects/homelab-backup"
+CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
 
 ########################################
 # Runtime options
@@ -862,34 +864,21 @@ install_claude_desktop() {
     #
     # Supported architecture?
     #
-    if [[ "$ARCHITECTURE" != "amd64" && "$ARCHITECTURE" != "arm64" ]]; then
+    if [[ "$ARCHITECTURE" != "amd64" ]]; then
         print_info "⏭️ Claude Desktop not supported on $ARCHITECTURE"
         SUMMARY+=("Claude Desktop|⏭️ Unsupported architecture")
         return
     fi
 
     #
-    # Add Anthropic's APT repository
-    #
-    if [[ "$DRY_RUN" == true ]]; then
-        print_info "➜ curl ... | sudo tee /usr/share/keyrings/claude-desktop-archive-keyring.asc"
-    else
-        sudo curl -fsSLo /usr/share/keyrings/claude-desktop-archive-keyring.asc \
-            https://downloads.claude.ai/claude-desktop/key.asc
-    fi
-
-    if [[ "$DRY_RUN" == true ]]; then
-        print_info "➜ Create claude-desktop.list"
-    else
-        echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/claude-desktop-archive-keyring.asc] https://downloads.claude.ai/claude-desktop/apt/stable stable main" \
-            | sudo tee /etc/apt/sources.list.d/claude-desktop.list >/dev/null
-    fi
-
-    #
     # Install
     #
-    run sudo apt update
-    run sudo apt install -y claude-desktop
+    local CLAUDE_DESKTOP_DEB
+    CLAUDE_DESKTOP_DEB="$(mktemp --suffix=.deb)"
+
+    run curl -fL "$CLAUDE_DESKTOP_DEB_URL" -o "$CLAUDE_DESKTOP_DEB"
+    run sudo apt install -y "$CLAUDE_DESKTOP_DEB"
+    run rm -f "$CLAUDE_DESKTOP_DEB"
 
     SUMMARY+=("Claude Desktop|$INSTALLATION_MESSAGE")
 }

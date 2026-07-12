@@ -49,10 +49,12 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
-  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Virtualbox, Docker, Docker Compose, gh, and supporting
+  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Virtualbox, Docker, Docker Compose, gh, nfs-kernel-server, and supporting
   libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
+- On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
+  installer.
 
 ### Snap Applications
 
@@ -126,9 +128,10 @@ variable in `config.sh`. The clone location remains
   Step 1.
 - Moves selected bundled DaVinci Resolve libraries into
   `/opt/resolve/libs/oldlibs` to improve compatibility with Linux Mint.
-- Installs [Claude Desktop](https://claude.ai/download) by adding Anthropic's
-  official APT repository and installing the `claude-desktop` package, on
-  AMD64 and ARM64 systems.
+- Installs [Claude Desktop](https://claude.ai/download) on AMD64 systems by
+  downloading Anthropic's latest x64 `.deb` installer and installing it with
+  APT. The installer registers Anthropic's APT repository so Claude Desktop
+  updates with the rest of the system packages.
 
 ### Desktop Configuration
 
@@ -234,7 +237,8 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 ### Other Notes
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
-- `immich-go` and Claude Desktop are installed only on AMD64 and ARM64 systems.
+- `immich-go` is installed only on AMD64 and ARM64 systems.
+- Claude Desktop is installed only on AMD64 systems.
 - Homelab Backup is cloned to `~/Projects/homelab-backup` and scheduled with a
   user systemd timer.
 - Some operations may already be complete when the script is run again. Review
