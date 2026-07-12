@@ -59,6 +59,7 @@ APT_PACKAGES=(
     docker-compose-v2
     gh
     nfs-kernel-server
+    zbar-tools
 )
 
 SNAP_PACKAGES=(
