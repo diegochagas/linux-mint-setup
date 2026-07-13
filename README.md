@@ -73,6 +73,9 @@ The script installs Flatpak, adds Flathub, and installs:
 - Google Chrome
 - Emojify
 - Master PDF Editor
+- Kdenlive
+- Free Download Manager
+- Dosage
 
 ### GIMP Ecosystem
 

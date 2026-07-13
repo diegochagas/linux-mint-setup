@@ -75,6 +75,9 @@ FLATPAK_PACKAGES=(
     com.google.Chrome
     xyz.riothedev.emojify
     net.code_industry.MasterPDFEditor
+    org.kde.kdenlive
+    org.freedownloadmanager.Manager
+    io.github.diegopvlk.Dosage
 )
 
 DEFAULT_HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
