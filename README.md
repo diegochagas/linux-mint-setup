@@ -76,6 +76,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - Kdenlive
 - Free Download Manager
 - Dosage
+- Telegram Desktop
 
 ### GIMP Ecosystem
 

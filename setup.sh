@@ -78,6 +78,7 @@ FLATPAK_PACKAGES=(
     org.kde.kdenlive
     org.freedownloadmanager.Manager
     io.github.diegopvlk.Dosage
+    org.telegram.desktop
 )
 
 DEFAULT_HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
