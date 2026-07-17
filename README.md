@@ -6,21 +6,7 @@
 
 Personal post-install setup for Linux Mint. Follow the steps below in order.
 
-## Step 1 - Manual Downloads
-
-Complete this before running the setup script:
-
-1. Download [DaVinci Resolve](https://www.blackmagicdesign.com/products/davinciresolve).
-2. Extract or place the installer at:
-
-   ```text
-   ~/Downloads/DaVinci_Resolve_21.0_Linux/DaVinci_Resolve_21.0_Linux.run
-   ```
-
-The setup script installs DaVinci Resolve only when it finds the installer at
-that exact path.
-
-## Step 2 - Run the Automated Setup Script
+## Step 1 - Run the Automated Setup Script
 
 Open a terminal and run:
 
@@ -31,7 +17,7 @@ wget -O setup.sh https://raw.githubusercontent.com/diegochagas/linux-mint-setup/
 The script asks for the administrator password when it needs `sudo`
 permissions. Keep an internet connection active while it runs.
 
-## Step 3 - Manual Post-Install Steps
+## Step 2 - Manual Post-Install Steps
 
 1. Install the fonts located in the `Softwares` folder.
 2. Configure automatic system snapshots:
@@ -128,10 +114,6 @@ variable in `config.sh`. The clone location remains
 - Installs Tailscale using its official installation script.
 - Installs [`immich-go`](https://github.com/simulot/immich-go) to
   `/usr/local/bin/immich-go` on AMD64 and ARM64 systems.
-- Installs DaVinci Resolve when its installer is found at the path described in
-  Step 1.
-- Moves selected bundled DaVinci Resolve libraries into
-  `/opt/resolve/libs/oldlibs` to improve compatibility with Linux Mint.
 - Installs [Claude Desktop](https://claude.ai/download) on AMD64 systems by
   downloading Anthropic's latest x64 `.deb` installer and installing it with
   APT. The installer registers Anthropic's APT repository so Claude Desktop

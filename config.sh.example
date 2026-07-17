@@ -7,13 +7,6 @@
 ########################################
 
 #
-# Path to the DaVinci Resolve installer (.run)
-#
-# Leave empty to skip DaVinci installation.
-#
-DAVINCI_RUN=""
-
-#
 # GIMP ecosystem repository
 #
 # Cloned and executed by the setup to install the

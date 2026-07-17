@@ -812,48 +812,6 @@ install_tailscale() {
     SUMMARY+=("Tailscale|$INSTALLATION_MESSAGE")
 }
 
-install_davinci() {
-    print_step "Installing DaVinci Resolve"
-
-    #
-    # Already installed?
-    #
-    if directory_exists "/opt/resolve"; then
-        print_info "⏭️ DaVinci Resolve already installed"
-        SUMMARY+=("DaVinci Resolve|⏭️ Already installed")
-        return
-    fi
-
-    #
-    # Configured?
-    #
-    if [[ -z "${DAVINCI_RUN:-}" ]]; then
-        print_info "⏭️ DaVinci Resolve installer not configured"
-        SUMMARY+=("DaVinci Resolve|⏭️ Not configured")
-        return
-    fi
-
-    #
-    # Installer exists?
-    #
-    if ! file_exists "$DAVINCI_RUN"; then
-        print_info "⏭️ DaVinci Resolve installer not found"
-        print_info "   $DAVINCI_RUN"
-        SUMMARY+=("DaVinci Resolve|⏭️ Installer not found")
-        return
-    fi
-
-    #
-    # Install
-    #
-    print_info "Running installer..."
-
-    run chmod +x "$DAVINCI_RUN"
-    run sudo "$DAVINCI_RUN" -i
-
-    SUMMARY+=("DaVinci Resolve|$INSTALLATION_MESSAGE")
-}
-
 install_claude_desktop() {
     print_step "Installing Claude Desktop"
 
@@ -1158,8 +1116,6 @@ install_system() {
     install_gimp_ecosystem
 
     install_tailscale
-
-    install_davinci
 
     install_claude_desktop
 
