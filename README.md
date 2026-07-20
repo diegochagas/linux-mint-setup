@@ -23,6 +23,10 @@ permissions. Keep an internet connection active while it runs.
 2. Configure automatic system snapshots:
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
 Weekly - Keep 4 > Next > Next > Finish`.
+3. Open a new terminal and run `claude` once to sign in to Claude Code.
+4. If Claude for Firefox needs to be loaded manually, open
+   `about:debugging#/runtime/this-firefox`, click `Load Temporary Add-on`,
+   and select `~/.claude/firefox/extension/manifest.json`.
 
 ## What `setup.sh` Does
 
@@ -35,12 +39,18 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
-  unzip, xclip, CopyQ, btop, Inkscape, Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Virtualbox, Docker, Docker Compose, gh, nfs-kernel-server, zbar-tools, and supporting
-  libraries.
+  unzip, rsync, xclip, libsecret-tools, CopyQ, btop, Inkscape,
+  Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Docker,
+  Docker Compose, gh, nfs-kernel-server, zbar-tools, and supporting libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
+- Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) for
+  terminal use.
 - On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
   installer.
+- Installs
+  [Claude for Firefox](https://github.com/NetVar1337/claude-for-firefox), the
+  community Firefox extension bridge for Claude Code.
 
 ### Snap Applications
 
@@ -114,10 +124,23 @@ variable in `config.sh`. The clone location remains
 - Installs Tailscale using its official installation script.
 - Installs [`immich-go`](https://github.com/simulot/immich-go) to
   `/usr/local/bin/immich-go` on AMD64 and ARM64 systems.
+- Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) using
+  Anthropic's Linux terminal installer:
+  ```bash
+  curl -fsSL https://claude.ai/install.sh | bash
+  ```
 - Installs [Claude Desktop](https://claude.ai/download) on AMD64 systems by
   downloading Anthropic's latest x64 `.deb` installer and installing it with
   APT. The installer registers Anthropic's APT repository so Claude Desktop
   updates with the rest of the system packages.
+- Installs
+  [Claude for Firefox](https://github.com/NetVar1337/claude-for-firefox) by
+  cloning the repository, running its Linux installer, copying the extension to
+  `~/.claude/firefox/extension/`, registering Firefox native messaging hosts,
+  and creating the `Claude Firefox` desktop launcher.
+
+The Claude for Firefox repository to clone can be overridden with the
+`CLAUDE_FIREFOX_REPO` variable in `config.sh`.
 
 ### Desktop Configuration
 
@@ -224,7 +247,16 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
 - `immich-go` is installed only on AMD64 and ARM64 systems.
+- Claude Code is installed with Anthropic's terminal installer. Run `claude`
+  once after setup to sign in.
 - Claude Desktop is installed only on AMD64 systems.
+- Claude for Firefox is an unofficial community extension. Firefox release
+  builds load it as a temporary extension, so after restarting Firefox you may
+  need to open `about:debugging#/runtime/this-firefox`, choose
+  `Load Temporary Add-on`, and select
+  `~/.claude/firefox/extension/manifest.json`. If the sidebar shows
+  authentication errors after signing in to Claude Code, run
+  `~/.claude/firefox/refresh-tokens.sh`.
 - Homelab Backup is cloned to `~/Projects/homelab-backup` and scheduled with a
   user systemd timer.
 - Some operations may already be complete when the script is run again. Review

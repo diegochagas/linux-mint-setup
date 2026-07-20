@@ -44,7 +44,9 @@ APT_PACKAGES=(
     curl
     jq
     unzip
+    rsync
     xclip
+    libsecret-tools
     libxcb-xinerama0
     copyq
     btop
@@ -54,7 +56,6 @@ APT_PACKAGES=(
     gparted
     tree
     shellcheck
-    virtualbox
     docker.io
     docker-compose-v2
     gh
@@ -84,6 +85,8 @@ FLATPAK_PACKAGES=(
 DEFAULT_HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 DEFAULT_HOMELAB_BACKUP_DIR="$HOME/Projects/homelab-backup"
 CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
+CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
+DEFAULT_CLAUDE_FIREFOX_REPO="https://github.com/NetVar1337/claude-for-firefox.git"
 
 ########################################
 # Runtime options
@@ -95,6 +98,7 @@ INSTALLATION_MESSAGE=""
 CONFIGURATION_MESSAGE=""
 
 SUMMARY=()
+CLAUDE_CODE_INSTALLER_COMPLETED=false
 
 ########################################
 # Functions
@@ -361,6 +365,7 @@ check_dependencies() {
         sudo
         apt
         dpkg
+        gpg
         systemctl
     )
 
@@ -812,6 +817,84 @@ install_tailscale() {
     SUMMARY+=("Tailscale|$INSTALLATION_MESSAGE")
 }
 
+find_claude_code_binary() {
+    if binary_exists claude; then
+        command -v claude
+        return 0
+    fi
+
+    if [[ -x "$HOME/.local/bin/claude" ]]; then
+        printf '%s\n' "$HOME/.local/bin/claude"
+        return 0
+    fi
+
+    local versions_dir="$HOME/.local/share/claude/versions"
+
+    if [[ -d "$versions_dir" ]]; then
+        local latest
+        latest="$(find "$versions_dir" -maxdepth 3 -type f -name claude -perm /111 -print 2>/dev/null | sort -V | tail -n 1 || true)"
+
+        if [[ -n "$latest" ]]; then
+            printf '%s\n' "$latest"
+            return 0
+        fi
+    fi
+
+    return 1
+}
+
+ensure_user_local_bin_on_path() {
+    case ":$PATH:" in
+        *":$HOME/.local/bin:"*) ;;
+        *) export PATH="$HOME/.local/bin:$PATH" ;;
+    esac
+
+    local local_bin_literal="\$HOME/.local/bin"
+    local path_line="export PATH=\"\$HOME/.local/bin:\$PATH\""
+    local shell_file
+
+    for shell_file in "$HOME/.bashrc" "$HOME/.profile"; do
+        if [[ -f "$shell_file" ]] &&
+            (grep -Fq "$local_bin_literal" "$shell_file" || grep -Fq "$HOME/.local/bin" "$shell_file"); then
+            continue
+        fi
+
+        if [[ "$DRY_RUN" == true ]]; then
+            print_info "➜ Add ~/.local/bin to PATH in $shell_file"
+        else
+            touch "$shell_file"
+            {
+                echo
+                echo "# Added by linux-mint-setup for user-local CLI tools."
+                echo "$path_line"
+            } >> "$shell_file"
+        fi
+    done
+}
+
+install_claude_code() {
+    print_step "Installing Claude Code"
+
+    ensure_user_local_bin_on_path
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ curl -fL --progress-bar $CLAUDE_CODE_INSTALL_URL | bash"
+    else
+        curl -fsSL "$CLAUDE_CODE_INSTALL_URL" | bash
+    fi
+
+    CLAUDE_CODE_INSTALLER_COMPLETED=true
+
+    ensure_user_local_bin_on_path
+
+    if [[ "$DRY_RUN" == false ]] && ! find_claude_code_binary >/dev/null; then
+        print_info "❌ Claude Code installer completed, but the claude binary was not found."
+        exit 1
+    fi
+
+    SUMMARY+=("Claude Code|$INSTALLATION_MESSAGE")
+}
+
 install_claude_desktop() {
     print_step "Installing Claude Desktop"
 
@@ -844,6 +927,49 @@ install_claude_desktop() {
     run rm -f "$CLAUDE_DESKTOP_DEB"
 
     SUMMARY+=("Claude Desktop|$INSTALLATION_MESSAGE")
+}
+
+install_claude_for_firefox() {
+    print_step "Installing Claude for Firefox"
+
+    if [[ "$CLAUDE_CODE_INSTALLER_COMPLETED" != true ]]; then
+        print_info "❌ Claude for Firefox requires the Claude Code installer to complete first."
+        SUMMARY+=("Claude for Firefox|❌ Claude Code installer not run")
+        exit 1
+    fi
+
+    local extension_manifest="$HOME/.claude/firefox/extension/manifest.json"
+    local native_host_dir="$HOME/.mozilla/native-messaging-hosts"
+    local browser_native_host="$native_host_dir/com.anthropic.claude_browser_extension.json"
+    local code_native_host="$native_host_dir/com.anthropic.claude_code_browser_extension.json"
+
+    if file_exists "$extension_manifest" && file_exists "$browser_native_host" && file_exists "$code_native_host"; then
+        print_info "⏭️ Claude for Firefox already installed"
+        SUMMARY+=("Claude for Firefox|⏭️ Already installed")
+        return
+    fi
+
+    local claude_code_bin
+
+    if ! claude_code_bin="$(find_claude_code_binary 2>/dev/null)"; then
+        if [[ "$DRY_RUN" == true ]]; then
+            claude_code_bin="$HOME/.local/bin/claude"
+        else
+            print_info "❌ Claude Code is required before installing Claude for Firefox."
+            SUMMARY+=("Claude for Firefox|❌ Missing Claude Code")
+            exit 1
+        fi
+    fi
+
+    local CLAUDE_FIREFOX_REPO_URL="${CLAUDE_FIREFOX_REPO:-$DEFAULT_CLAUDE_FIREFOX_REPO}"
+    local CLAUDE_FIREFOX_DIR
+    CLAUDE_FIREFOX_DIR="$(mktemp -d)"
+
+    run git clone --depth 1 "$CLAUDE_FIREFOX_REPO_URL" "$CLAUDE_FIREFOX_DIR"
+    run env CLAUDE_CODE_BIN="$claude_code_bin" bash "$CLAUDE_FIREFOX_DIR/install.sh"
+    run rm -rf "$CLAUDE_FIREFOX_DIR"
+
+    SUMMARY+=("Claude for Firefox|$INSTALLATION_MESSAGE")
 }
 
 shortcut_matches() {
@@ -1117,7 +1243,11 @@ install_system() {
 
     install_tailscale
 
+    install_claude_code
+
     install_claude_desktop
+
+    install_claude_for_firefox
 
     configure_keyboard_shortcuts
 

@@ -24,6 +24,15 @@ GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"
 HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 
 #
+# Claude for Firefox repository
+#
+# Cloned and executed by the setup to install the
+# community Firefox extension bridge for Claude Code.
+# Override to use a fork or a local clone.
+#
+CLAUDE_FIREFOX_REPO="https://github.com/NetVar1337/claude-for-firefox.git"
+
+#
 # Google Gemini API key, forwarded to the GIMP setup
 # for its AI plug-ins (Filters > AI).
 #
