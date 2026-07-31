@@ -87,6 +87,8 @@ DEFAULT_HOMELAB_BACKUP_DIR="$HOME/Projects/homelab-backup"
 CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
 CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 DEFAULT_CLAUDE_FIREFOX_REPO="https://github.com/NetVar1337/claude-for-firefox.git"
+APP_MANAGER_RELEASES_API_URL="https://api.github.com/repos/kem-a/AppManager/releases/latest"
+WATTAGE_NIGHTLY_BASE_URL="https://nightly.link/v81d/wattage/workflows/build-appimage/main"
 
 ########################################
 # Runtime options
@@ -714,6 +716,189 @@ install_immich_go() {
     SUMMARY+=("immich-go|$INSTALLATION_MESSAGE")  
 }
 
+appimage_artifact_arch() {
+    case "$ARCHITECTURE" in
+        amd64) printf "x86_64" ;;
+        arm64) printf "aarch64" ;;
+        *) return 1 ;;
+    esac
+}
+
+find_app_manager_binary() {
+    if binary_exists app-manager; then
+        command -v app-manager
+        return 0
+    fi
+
+    if [[ -x "$HOME/.local/bin/app-manager" ]]; then
+        printf "%s\n" "$HOME/.local/bin/app-manager"
+        return 0
+    fi
+
+    return 1
+}
+
+install_app_manager() {
+    print_step "Installing AppManager"
+
+    ensure_user_local_bin_on_path
+
+    if find_app_manager_binary >/dev/null; then
+        print_info "⏭️ AppManager already installed"
+        SUMMARY+=("AppManager|⏭️ Already installed")
+        return
+    fi
+
+    local APP_MANAGER_ARCH
+
+    if ! APP_MANAGER_ARCH="$(appimage_artifact_arch)"; then
+        print_info "⏭️ AppManager is not available for $ARCHITECTURE."
+        SUMMARY+=("AppManager|⏭️ Unsupported architecture")
+        return
+    fi
+
+    local APP_MANAGER_URL
+    APP_MANAGER_URL="$(curl -fsSL "$APP_MANAGER_RELEASES_API_URL" | jq -r --arg arch "$APP_MANAGER_ARCH" '.assets[] | select(.name | endswith("anylinux-" + $arch + ".AppImage")) | .browser_download_url' | head -n 1)"
+
+    if [[ -z "$APP_MANAGER_URL" || "$APP_MANAGER_URL" == "null" ]]; then
+        print_info "⚠️ No AppManager $APP_MANAGER_ARCH AppImage release asset was found."
+        SUMMARY+=("AppManager|⚠️ Release asset unavailable")
+        return
+    fi
+
+    local APP_MANAGER_APPIMAGE
+
+    if [[ "$DRY_RUN" == true ]]; then
+        APP_MANAGER_APPIMAGE="/tmp/AppManager-${APP_MANAGER_ARCH}.AppImage"
+    else
+        APP_MANAGER_APPIMAGE="$(mktemp --suffix=.AppImage)"
+    fi
+
+    if ! run curl -fL --progress-bar "$APP_MANAGER_URL" -o "$APP_MANAGER_APPIMAGE"; then
+        print_info "⚠️ Could not download AppManager."
+        SUMMARY+=("AppManager|⚠️ Download failed")
+        return
+    fi
+
+    run chmod +x "$APP_MANAGER_APPIMAGE"
+
+    if ! run "$APP_MANAGER_APPIMAGE" install "$APP_MANAGER_APPIMAGE"; then
+        print_info "⚠️ AppManager could not install itself from the downloaded AppImage."
+        run rm -f "$APP_MANAGER_APPIMAGE"
+        SUMMARY+=("AppManager|⚠️ Installation failed")
+        return
+    fi
+
+    if [[ "$DRY_RUN" == false ]] && ! find_app_manager_binary >/dev/null; then
+        print_info "⚠️ AppManager installed, but the app-manager CLI was not found."
+        SUMMARY+=("AppManager|⚠️ CLI not found")
+        return
+    fi
+
+    SUMMARY+=("AppManager|$INSTALLATION_MESSAGE")
+}
+
+wattage_is_installed() {
+    local registry_file="$HOME/.local/share/app-manager/installations.json"
+
+    if [[ -f "$registry_file" ]] &&
+       jq -e '.installations[]? | select(((.name // "") | ascii_downcase) == "wattage" or ((.original_name // "") | ascii_downcase) == "wattage")' "$registry_file" >/dev/null 2>&1
+    then
+        return 0
+    fi
+
+    if binary_exists wattage || binary_exists Wattage; then
+        return 0
+    fi
+
+    if compgen -G "$HOME/.local/share/applications/*Wattage*.desktop" >/dev/null; then
+        return 0
+    fi
+
+    if compgen -G "$HOME/Applications/*Wattage*.AppImage" >/dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
+install_wattage() {
+    print_step "Installing Wattage"
+
+    if wattage_is_installed; then
+        print_info "⏭️ Wattage already installed"
+        SUMMARY+=("Wattage|⏭️ Already installed")
+        return
+    fi
+
+    local WATTAGE_ARCH
+
+    if ! WATTAGE_ARCH="$(appimage_artifact_arch)"; then
+        print_info "⏭️ Wattage nightly AppImage is not available for $ARCHITECTURE."
+        SUMMARY+=("Wattage|⏭️ Unsupported architecture")
+        return
+    fi
+
+    ensure_user_local_bin_on_path
+
+    local APP_MANAGER_BINARY
+
+    if [[ "$DRY_RUN" == true ]]; then
+        APP_MANAGER_BINARY="$HOME/.local/bin/app-manager"
+    elif ! APP_MANAGER_BINARY="$(find_app_manager_binary 2>/dev/null)"; then
+        print_info "⚠️ Wattage requires AppManager, but the app-manager CLI is not available."
+        SUMMARY+=("Wattage|⚠️ AppManager unavailable")
+        return
+    fi
+
+    local WATTAGE_ZIP_URL="$WATTAGE_NIGHTLY_BASE_URL/Wattage-${WATTAGE_ARCH}.zip"
+    local WATTAGE_DIR
+
+    if [[ "$DRY_RUN" == true ]]; then
+        WATTAGE_DIR="/tmp/wattage-appimage-${WATTAGE_ARCH}"
+    else
+        WATTAGE_DIR="$(mktemp -d)"
+    fi
+
+    if ! run curl -fL --progress-bar "$WATTAGE_ZIP_URL" -o "$WATTAGE_DIR/Wattage.zip"; then
+        print_info "⚠️ Could not download the Wattage $WATTAGE_ARCH nightly artifact."
+        run rm -rf "$WATTAGE_DIR"
+        SUMMARY+=("Wattage|⚠️ Nightly artifact unavailable")
+        return
+    fi
+
+    run unzip -q "$WATTAGE_DIR/Wattage.zip" -d "$WATTAGE_DIR/extracted"
+
+    local WATTAGE_APPIMAGE
+
+    if [[ "$DRY_RUN" == true ]]; then
+        WATTAGE_APPIMAGE="$WATTAGE_DIR/extracted/Wattage-${WATTAGE_ARCH}.AppImage"
+        print_info "➜ Find Wattage AppImage in $WATTAGE_DIR/extracted"
+    else
+        WATTAGE_APPIMAGE="$(find "$WATTAGE_DIR/extracted" -type f -iname "*.AppImage" -print -quit)"
+
+        if [[ -z "$WATTAGE_APPIMAGE" ]]; then
+            print_info "⚠️ No AppImage was found in the Wattage nightly artifact."
+            run rm -rf "$WATTAGE_DIR"
+            SUMMARY+=("Wattage|⚠️ AppImage not found")
+            return
+        fi
+    fi
+
+    run chmod +x "$WATTAGE_APPIMAGE"
+
+    if ! run "$APP_MANAGER_BINARY" install "$WATTAGE_APPIMAGE"; then
+        print_info "⚠️ AppManager could not install Wattage."
+        run rm -rf "$WATTAGE_DIR"
+        SUMMARY+=("Wattage|⚠️ AppManager install failed")
+        return
+    fi
+
+    run rm -rf "$WATTAGE_DIR"
+
+    SUMMARY+=("Wattage|$INSTALLATION_MESSAGE")
+}
+
 install_snap_packages() {
     local changed=false
 
@@ -1234,6 +1419,10 @@ install_system() {
     install_balena_etcher
 
     install_immich_go
+
+    install_app_manager
+
+    install_wattage
 
     install_snap_packages
 

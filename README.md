@@ -44,6 +44,10 @@ actions:
   Docker Compose, gh, nfs-kernel-server, zbar-tools, and supporting libraries.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
+- On AMD64 and ARM64 systems, installs
+  [AppManager](https://github.com/kem-a/AppManager) and uses it to install the
+  [Wattage](https://github.com/v81d/wattage) nightly AppImage from
+  `nightly.link`.
 - Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) for
   terminal use.
 - On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
@@ -124,6 +128,10 @@ variable in `config.sh`. The clone location remains
 - Installs Tailscale using its official installation script.
 - Installs [`immich-go`](https://github.com/simulot/immich-go) to
   `/usr/local/bin/immich-go` on AMD64 and ARM64 systems.
+- Installs [AppManager](https://github.com/kem-a/AppManager), then downloads the
+  latest successful Wattage `build-appimage.yml` artifact for the current CPU
+  architecture and installs the extracted AppImage with
+  `app-manager install`.
 - Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) using
   Anthropic's Linux terminal installer:
   ```bash
@@ -247,6 +255,9 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
 - `immich-go` is installed only on AMD64 and ARM64 systems.
+- AppManager and Wattage are installed only on AMD64 and ARM64 systems. If the
+  Wattage nightly artifact is temporarily unavailable, the script reports that
+  in the summary and continues.
 - Claude Code is installed with Anthropic's terminal installer. Run `claude`
   once after setup to sign in.
 - Claude Desktop is installed only on AMD64 systems.
