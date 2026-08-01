@@ -46,6 +46,7 @@ APT_PACKAGES=(
     unzip
     rsync
     xclip
+    freerdp3-x11
     libsecret-tools
     libxcb-xinerama0
     copyq
@@ -82,13 +83,36 @@ FLATPAK_PACKAGES=(
     org.telegram.desktop
 )
 
+DEFAULT_GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"
 DEFAULT_HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 DEFAULT_HOMELAB_BACKUP_DIR="$HOME/Projects/homelab-backup"
-CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
-CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 DEFAULT_CLAUDE_FIREFOX_REPO="https://github.com/NetVar1337/claude-for-firefox.git"
-APP_MANAGER_RELEASES_API_URL="https://api.github.com/repos/kem-a/AppManager/releases/latest"
-WATTAGE_NIGHTLY_BASE_URL="https://nightly.link/v81d/wattage/workflows/build-appimage/main"
+DEFAULT_SUBLIME_APT_GPG_URL="https://download.sublimetext.com/sublimehq-pub.gpg"
+DEFAULT_SUBLIME_APT_REPOSITORY="deb https://download.sublimetext.com/ apt/stable/"
+DEFAULT_REMOTE_MOUSE_ZIP_URL="https://www.remotemouse.net/downloads/linux/RemoteMouse_x86_64.zip"
+DEFAULT_BALENA_ETCHER_RELEASES_API_URL="https://api.github.com/repos/balena-io/etcher/releases/latest"
+DEFAULT_IMMICH_GO_RELEASES_API_URL="https://api.github.com/repos/simulot/immich-go/releases/latest"
+DEFAULT_APP_MANAGER_RELEASES_API_URL="https://api.github.com/repos/kem-a/AppManager/releases/latest"
+DEFAULT_WATTAGE_NIGHTLY_BASE_URL="https://nightly.link/v81d/wattage/workflows/build-appimage/main"
+DEFAULT_WINBOAT_APPIMAGE_URL="https://github.com/TibixDev/winboat/releases/download/v0.9.0/winboat-0.9.0-x86_64.AppImage"
+DEFAULT_TAILSCALE_INSTALL_URL="https://tailscale.com/install.sh"
+DEFAULT_CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
+DEFAULT_CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
+
+GIMP_SETUP_REPO="${GIMP_SETUP_REPO:-$DEFAULT_GIMP_SETUP_REPO}"
+HOMELAB_BACKUP_REPO="${HOMELAB_BACKUP_REPO:-$DEFAULT_HOMELAB_BACKUP_REPO}"
+CLAUDE_FIREFOX_REPO="${CLAUDE_FIREFOX_REPO:-$DEFAULT_CLAUDE_FIREFOX_REPO}"
+SUBLIME_APT_GPG_URL="${SUBLIME_APT_GPG_URL:-$DEFAULT_SUBLIME_APT_GPG_URL}"
+SUBLIME_APT_REPOSITORY="${SUBLIME_APT_REPOSITORY:-$DEFAULT_SUBLIME_APT_REPOSITORY}"
+REMOTE_MOUSE_ZIP_URL="${REMOTE_MOUSE_ZIP_URL:-$DEFAULT_REMOTE_MOUSE_ZIP_URL}"
+BALENA_ETCHER_RELEASES_API_URL="${BALENA_ETCHER_RELEASES_API_URL:-$DEFAULT_BALENA_ETCHER_RELEASES_API_URL}"
+IMMICH_GO_RELEASES_API_URL="${IMMICH_GO_RELEASES_API_URL:-$DEFAULT_IMMICH_GO_RELEASES_API_URL}"
+APP_MANAGER_RELEASES_API_URL="${APP_MANAGER_RELEASES_API_URL:-$DEFAULT_APP_MANAGER_RELEASES_API_URL}"
+WATTAGE_NIGHTLY_BASE_URL="${WATTAGE_NIGHTLY_BASE_URL:-$DEFAULT_WATTAGE_NIGHTLY_BASE_URL}"
+WINBOAT_APPIMAGE_URL="${WINBOAT_APPIMAGE_URL:-$DEFAULT_WINBOAT_APPIMAGE_URL}"
+TAILSCALE_INSTALL_URL="${TAILSCALE_INSTALL_URL:-$DEFAULT_TAILSCALE_INSTALL_URL}"
+CLAUDE_CODE_INSTALL_URL="${CLAUDE_CODE_INSTALL_URL:-$DEFAULT_CLAUDE_CODE_INSTALL_URL}"
+CLAUDE_DESKTOP_DEB_URL="${CLAUDE_DESKTOP_DEB_URL:-$DEFAULT_CLAUDE_DESKTOP_DEB_URL}"
 
 ########################################
 # Runtime options
@@ -522,13 +546,13 @@ install_apt_packages() {
     if [[ "$DRY_RUN" == true ]]; then
         print_info "➜ wget ... | gpg --dearmor | sudo tee ..."
     else
-        wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sublimehq-archive.gpg > /dev/null
+        wget -qO - "$SUBLIME_APT_GPG_URL" | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sublimehq-archive.gpg > /dev/null
     fi
 
     if [[ "$DRY_RUN" == true ]]; then
         print_info "➜ Create sublime-text.list"
     else
-        echo "deb https://download.sublimetext.com/ apt/stable/" \
+        echo "$SUBLIME_APT_REPOSITORY" \
             | sudo tee /etc/apt/sources.list.d/sublime-text.list >/dev/null
     fi
 
@@ -551,6 +575,77 @@ install_apt_packages() {
     run sudo apt install -y "${APT_PACKAGES[@]}"
         
     SUMMARY+=("APT Packages|$INSTALLATION_MESSAGE")
+}
+
+docker_target_user() {
+    if [[ -n "${SUDO_USER:-}" && "$SUDO_USER" != "root" ]]; then
+        printf '%s\n' "$SUDO_USER"
+    else
+        id -un
+    fi
+}
+
+docker_group_exists() {
+    getent group docker >/dev/null 2>&1
+}
+
+user_is_in_group() {
+    local user="$1"
+    local group="$2"
+    local groups
+
+    groups="$(id -nG "$user" 2>/dev/null || true)"
+
+    [[ " $groups " == *" $group "* ]]
+}
+
+docker_services_enabled_and_running() {
+    command_succeeds systemctl is-enabled docker.service &&
+        command_succeeds systemctl is-active docker.service &&
+        command_succeeds systemctl is-enabled containerd.service &&
+        command_succeeds systemctl is-active containerd.service
+}
+
+configure_docker() {
+    print_step "Configuring Docker"
+
+    local target_user
+    local target_group
+    local target_home
+    local docker_config_dir
+
+    target_user="$(docker_target_user)"
+    target_group="$(id -gn "$target_user")"
+    target_home="$(getent passwd "$target_user" | cut -d: -f6)"
+    docker_config_dir="$target_home/.docker"
+
+    if docker_group_exists &&
+       user_is_in_group "$target_user" docker &&
+       docker_services_enabled_and_running
+    then
+        print_info "⏭️ Docker already configured"
+        SUMMARY+=("Docker|⏭️ Already configured")
+        return
+    fi
+
+    if ! docker_group_exists; then
+        run sudo groupadd docker
+    fi
+
+    if ! user_is_in_group "$target_user" docker; then
+        run sudo usermod -aG docker "$target_user"
+        print_info "ℹ️ Log out and back in, or run 'newgrp docker', before using Docker without sudo."
+    fi
+
+    if directory_exists "$docker_config_dir"; then
+        run sudo chown "$target_user:$target_group" "$docker_config_dir" -R
+        run sudo chmod g+rwx "$docker_config_dir" -R
+    fi
+
+    run sudo systemctl enable --now docker.service
+    run sudo systemctl enable --now containerd.service
+
+    SUMMARY+=("Docker|$CONFIGURATION_MESSAGE")
 }
 
 ########################################
@@ -623,7 +718,7 @@ install_remote_mouse() {
     if [[ "$ARCHITECTURE" == "amd64" ]]; then
         local REMOTE_MOUSE_DIR
         REMOTE_MOUSE_DIR="$(mktemp -d)"
-        run curl -fsSL https://www.remotemouse.net/downloads/linux/RemoteMouse_x86_64.zip -o "$REMOTE_MOUSE_DIR/remotemouse.zip"
+        run curl -fsSL "$REMOTE_MOUSE_ZIP_URL" -o "$REMOTE_MOUSE_DIR/remotemouse.zip"
         run unzip -q "$REMOTE_MOUSE_DIR/remotemouse.zip" -d "$REMOTE_MOUSE_DIR/app"
         run sudo install -d /opt/remotemouse
         run sudo cp -a "$REMOTE_MOUSE_DIR/app/." /opt/remotemouse/
@@ -662,7 +757,7 @@ install_balena_etcher() {
         local ETCHER_DEB
         ETCHER_DEB="$(mktemp --suffix=.deb)"
         local ETCHER_DEB_URL
-        ETCHER_DEB_URL="$(curl -fsSL https://api.github.com/repos/balena-io/etcher/releases/latest | jq -r '.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url' | head -n 1)"
+        ETCHER_DEB_URL="$(curl -fsSL "$BALENA_ETCHER_RELEASES_API_URL" | jq -r '.assets[] | select(.name | endswith("_amd64.deb")) | .browser_download_url' | head -n 1)"
         run curl -fsSL "$ETCHER_DEB_URL" -o "$ETCHER_DEB"
         run sudo apt install -y "$ETCHER_DEB"
         run rm -f "$ETCHER_DEB"
@@ -694,7 +789,7 @@ install_immich_go() {
         local IMMICH_GO_DIR
         IMMICH_GO_DIR="$(mktemp -d)"
         local IMMICH_GO_URL
-        IMMICH_GO_URL="$(curl -fsSL https://api.github.com/repos/simulot/immich-go/releases/latest | jq -r ".assets[] | select(.name == \"immich-go_Linux_${IMMICH_GO_ARCH}.tar.gz\") | .browser_download_url" | head -n 1)"
+        IMMICH_GO_URL="$(curl -fsSL "$IMMICH_GO_RELEASES_API_URL" | jq -r ".assets[] | select(.name == \"immich-go_Linux_${IMMICH_GO_ARCH}.tar.gz\") | .browser_download_url" | head -n 1)"
         if [[ -z "$IMMICH_GO_URL" ]]; then
             print_info "No immich-go Linux $IMMICH_GO_ARCH release asset was found."
             exit 1
@@ -899,6 +994,90 @@ install_wattage() {
     SUMMARY+=("Wattage|$INSTALLATION_MESSAGE")
 }
 
+winboat_is_installed() {
+    local registry_file="$HOME/.local/share/app-manager/installations.json"
+
+    if [[ -f "$registry_file" ]] &&
+       jq -e '.installations[]? | select((((.name // "") | ascii_downcase) == "winboat") or (((.original_name // "") | ascii_downcase) | contains("winboat")))' "$registry_file" >/dev/null 2>&1
+    then
+        return 0
+    fi
+
+    if binary_exists winboat || binary_exists WinBoat; then
+        return 0
+    fi
+
+    if [[ -d "$HOME/.local/share/applications" ]] &&
+       find "$HOME/.local/share/applications" -maxdepth 1 -type f -iname "*winboat*.desktop" -print -quit | grep -q .
+    then
+        return 0
+    fi
+
+    if [[ -d "$HOME/Applications" ]] &&
+       find "$HOME/Applications" -maxdepth 1 -type f -iname "*winboat*.AppImage" -print -quit | grep -q .
+    then
+        return 0
+    fi
+
+    return 1
+}
+
+install_winboat() {
+    print_step "Installing WinBoat"
+
+    if winboat_is_installed; then
+        print_info "⏭️ WinBoat already installed"
+        SUMMARY+=("WinBoat|⏭️ Already installed")
+        return
+    fi
+
+    if [[ "$ARCHITECTURE" != "amd64" ]]; then
+        print_info "⏭️ WinBoat AppImage is not available for $ARCHITECTURE."
+        SUMMARY+=("WinBoat|⏭️ Unsupported architecture")
+        return
+    fi
+
+    ensure_user_local_bin_on_path
+
+    local APP_MANAGER_BINARY
+
+    if [[ "$DRY_RUN" == true ]]; then
+        APP_MANAGER_BINARY="$HOME/.local/bin/app-manager"
+    elif ! APP_MANAGER_BINARY="$(find_app_manager_binary 2>/dev/null)"; then
+        print_info "⚠️ WinBoat requires AppManager, but the app-manager CLI is not available."
+        SUMMARY+=("WinBoat|⚠️ AppManager unavailable")
+        return
+    fi
+
+    local WINBOAT_APPIMAGE
+
+    if [[ "$DRY_RUN" == true ]]; then
+        WINBOAT_APPIMAGE="/tmp/winboat-x86_64.AppImage"
+    else
+        WINBOAT_APPIMAGE="$(mktemp --suffix=.AppImage)"
+    fi
+
+    if ! run curl -fL --progress-bar "$WINBOAT_APPIMAGE_URL" -o "$WINBOAT_APPIMAGE"; then
+        print_info "⚠️ Could not download WinBoat."
+        run rm -f "$WINBOAT_APPIMAGE"
+        SUMMARY+=("WinBoat|⚠️ Download failed")
+        return
+    fi
+
+    run chmod +x "$WINBOAT_APPIMAGE"
+
+    if ! run "$APP_MANAGER_BINARY" install "$WINBOAT_APPIMAGE"; then
+        print_info "⚠️ AppManager could not install WinBoat."
+        run rm -f "$WINBOAT_APPIMAGE"
+        SUMMARY+=("WinBoat|⚠️ AppManager install failed")
+        return
+    fi
+
+    run rm -f "$WINBOAT_APPIMAGE"
+
+    SUMMARY+=("WinBoat|$INSTALLATION_MESSAGE")
+}
+
 install_snap_packages() {
     local changed=false
 
@@ -963,11 +1142,10 @@ install_gimp_ecosystem() {
         return
     fi
 
-    local GIMP_SETUP_REPO_URL="${GIMP_SETUP_REPO:-https://github.com/diegochagas/gimp-setup.git}"
     local GIMP_SETUP_DIR
     GIMP_SETUP_DIR="$(mktemp -d)"
 
-    run git clone --depth 1 "$GIMP_SETUP_REPO_URL" "$GIMP_SETUP_DIR"
+    run git clone --depth 1 "$GIMP_SETUP_REPO" "$GIMP_SETUP_DIR"
 
     local GIMP_SETUP_ARGS=()
 
@@ -995,9 +1173,9 @@ install_tailscale() {
     fi
 
     if [[ "$DRY_RUN" == true ]]; then
-        print_info "➜ curl -fsSL https://tailscale.com/install.sh | sh"
+        print_info "➜ curl -fsSL $TAILSCALE_INSTALL_URL | sh"
     else
-        curl -fsSL https://tailscale.com/install.sh | sh
+        curl -fsSL "$TAILSCALE_INSTALL_URL" | sh
     fi
     SUMMARY+=("Tailscale|$INSTALLATION_MESSAGE")
 }
@@ -1146,11 +1324,10 @@ install_claude_for_firefox() {
         fi
     fi
 
-    local CLAUDE_FIREFOX_REPO_URL="${CLAUDE_FIREFOX_REPO:-$DEFAULT_CLAUDE_FIREFOX_REPO}"
     local CLAUDE_FIREFOX_DIR
     CLAUDE_FIREFOX_DIR="$(mktemp -d)"
 
-    run git clone --depth 1 "$CLAUDE_FIREFOX_REPO_URL" "$CLAUDE_FIREFOX_DIR"
+    run git clone --depth 1 "$CLAUDE_FIREFOX_REPO" "$CLAUDE_FIREFOX_DIR"
     run env CLAUDE_CODE_BIN="$claude_code_bin" bash "$CLAUDE_FIREFOX_DIR/install.sh"
     run rm -rf "$CLAUDE_FIREFOX_DIR"
 
@@ -1302,7 +1479,6 @@ configure_update_manager() {
 }
 
 clone_homelab_backup() {
-    local repo_url="${HOMELAB_BACKUP_REPO:-$DEFAULT_HOMELAB_BACKUP_REPO}"
     local target_dir="$DEFAULT_HOMELAB_BACKUP_DIR"
 
     if directory_exists "$target_dir/.git"; then
@@ -1317,7 +1493,7 @@ clone_homelab_backup() {
     fi
 
     run mkdir -p "$(dirname "$target_dir")"
-    run git clone "$repo_url" "$target_dir"
+    run git clone "$HOMELAB_BACKUP_REPO" "$target_dir"
 }
 
 homelab_backup_service_matches() {
@@ -1414,6 +1590,8 @@ EOF
 install_system() {
     install_apt_packages
 
+    configure_docker
+
     install_remote_mouse
 
     install_balena_etcher
@@ -1423,6 +1601,8 @@ install_system() {
     install_app_manager
 
     install_wattage
+
+    install_winboat
 
     install_snap_packages
 

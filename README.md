@@ -39,15 +39,21 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
-  unzip, rsync, xclip, libsecret-tools, CopyQ, btop, Inkscape,
+  unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
   Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Docker,
   Docker Compose, gh, nfs-kernel-server, zbar-tools, and supporting libraries.
+- Configures Docker after installation by adding the current user to the
+  `docker` group, fixing existing `~/.docker` ownership if needed, and enabling
+  and starting the Docker and containerd systemd services. Log out and back in
+  before using Docker without `sudo`.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
 - On AMD64 and ARM64 systems, installs
   [AppManager](https://github.com/kem-a/AppManager) and uses it to install the
   [Wattage](https://github.com/v81d/wattage) nightly AppImage from
   `nightly.link`.
+- On AMD64 systems, installs [WinBoat](https://winboat.app/) from its AppImage
+  release using AppManager.
 - Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) for
   terminal use.
 - On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
@@ -132,6 +138,8 @@ variable in `config.sh`. The clone location remains
   latest successful Wattage `build-appimage.yml` artifact for the current CPU
   architecture and installs the extracted AppImage with
   `app-manager install`.
+- Installs [WinBoat](https://winboat.app/) on AMD64 systems by downloading the
+  configured AppImage release and installing it with `app-manager install`.
 - Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) using
   Anthropic's Linux terminal installer:
   ```bash
@@ -149,6 +157,9 @@ variable in `config.sh`. The clone location remains
 
 The Claude for Firefox repository to clone can be overridden with the
 `CLAUDE_FIREFOX_REPO` variable in `config.sh`.
+
+Installer and release source URLs, including the WinBoat AppImage URL, can also
+be overridden in `config.sh`. See `config.sh.example` for the full list.
 
 ### Desktop Configuration
 
@@ -255,9 +266,10 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
 - `immich-go` is installed only on AMD64 and ARM64 systems.
-- AppManager and Wattage are installed only on AMD64 and ARM64 systems. If the
-  Wattage nightly artifact is temporarily unavailable, the script reports that
-  in the summary and continues.
+- AppManager and Wattage are installed only on AMD64 and ARM64 systems. WinBoat
+  is installed only on AMD64 systems. If a configured AppImage or nightly
+  artifact is temporarily unavailable, the script reports that in the summary
+  and continues.
 - Claude Code is installed with Anthropic's terminal installer. Run `claude`
   once after setup to sign in.
 - Claude Desktop is installed only on AMD64 systems.
