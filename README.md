@@ -255,10 +255,18 @@ It also:
 The following apps are installed on ZimaOS, a personal NAS/home server operating system:
 
 - **Cloudflared** – Cloudflare Tunnel client for secure outbound access to self-hosted services.
+- **FlareSolverr** – Proxy server that bypasses Cloudflare and DDoS-Guard protection for automated indexers.
 - **Immich** – Self-hosted photo and video backup and management solution.
 - **Jellyfin** – Open-source media server for streaming movies, music, and TV shows.
+- **n8n** – Workflow automation tool for connecting apps and APIs without code.
 - **Nextcloud** – Self-hosted cloud platform for file sync, sharing, and collaboration.
+- **PeerDrop** – Peer-to-peer file sharing tool for quick transfers between devices.
 - **Pi-hole** – Network-wide DNS-based ad blocker.
+- **Prowlarr** – Indexer manager that integrates with the *arr apps to manage torrent and Usenet trackers.
+- **qBittorrent** – Open-source BitTorrent client for downloading and managing torrents.
+- **Radarr** – Movie collection manager that automates searching, downloading, and organizing movies.
+- **Seerr** – Media request and discovery tool for managing requests to Radarr/Sonarr.
+- **Sonarr** – TV series collection manager that automates searching, downloading, and organizing episodes.
 - **Tailscale** – VPN mesh network for secure remote access to the NAS.
 - **Vaultwarden** – Lightweight, self-hosted Bitwarden-compatible password manager server.
 
