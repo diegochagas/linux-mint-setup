@@ -33,34 +33,35 @@ ARCHITECTURE="$(dpkg --print-architecture)"
 readonly ARCHITECTURE
 
 APT_PACKAGES=(
+    anki
+    btop
+    copyq
+    curl
+    docker-compose-v2
+    docker.io
+    ffmpeg
     firefox
-    libimage-exiftool-perl
-    vlc
-    sublime-text
+    freerdp3-x11
+    gh
     git
+    gparted
+    inkscape
+    jq
+    libimage-exiftool-perl
+    libsecret-tools
+    libxcb-xinerama0
+    nextcloud-desktop
+    nfs-kernel-server
     nodejs
     npm
     python3
-    curl
-    jq
-    unzip
     rsync
-    xclip
-    freerdp3-x11
-    libsecret-tools
-    libxcb-xinerama0
-    copyq
-    btop
-    inkscape
-    nextcloud-desktop
-    ffmpeg
-    gparted
-    tree
     shellcheck
-    docker.io
-    docker-compose-v2
-    gh
-    nfs-kernel-server
+    sublime-text
+    tree
+    unzip
+    vlc
+    xclip
     zbar-tools
 )
 

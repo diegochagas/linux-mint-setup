@@ -41,7 +41,7 @@ actions:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
   unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
   Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Docker,
-  Docker Compose, gh, nfs-kernel-server, zbar-tools, and supporting libraries.
+  Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, and supporting libraries.
 - Configures Docker after installation by adding the current user to the
   `docker` group, fixing existing `~/.docker` ownership if needed, and enabling
   and starting the Docker and containerd systemd services. Log out and back in
@@ -258,7 +258,6 @@ The following apps are installed on ZimaOS, a personal NAS/home server operating
 - **Immich** – Self-hosted photo and video backup and management solution.
 - **Jellyfin** – Open-source media server for streaming movies, music, and TV shows.
 - **Nextcloud** – Self-hosted cloud platform for file sync, sharing, and collaboration.
-- **PeerDrop** – Peer-to-peer file sharing tool for quick transfers between devices.
 - **Pi-hole** – Network-wide DNS-based ad blocker.
 - **qBittorrent** – Open-source BitTorrent client for downloading and managing torrents.
 - **Tailscale** – VPN mesh network for secure remote access to the NAS.
