@@ -40,7 +40,8 @@ actions:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq, AntiMicroX,
   unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
   Nextcloud Desktop, FFmpeg, fontconfig, GParted, Tree, ShellCheck, Docker,
-  Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, and supporting libraries.
+  Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, the TimGM6mb
+  SoundFont, and supporting libraries.
 - Configures Docker after installation by adding the current user to the
   `docker` group, fixing existing `~/.docker` ownership if needed, and enabling
   and starting the Docker and containerd systemd services. Log out and back in
@@ -82,6 +83,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - Free Download Manager
 - Dosage
 - mGBA
+- EasyRPG Player
 - Telegram Desktop
 
 ### GIMP Ecosystem
@@ -192,6 +194,16 @@ It also:
   progress stays synced across machines. If the variable is empty or the
   library does not exist yet, the step is skipped — set the path in
   `config.sh` and re-run `setup.sh`.
+- Grants EasyRPG Player access to the RPG Maker library set by
+  `RPG_MAKER_LIBRARY_DIR` in `config.sh` — a directory with one subfolder per
+  game and the shared RTP assets in `RTP/2000` and `RTP/2003` subfolders, e.g.
+  a folder synced by Nextcloud — and copies the RTP into EasyRPG's default
+  search path together with the TimGM6mb GM soundfont so MIDI music plays.
+  Open the games with EasyRPG's built-in game browser by navigating to the
+  library folder; saves are written inside each game folder, so progress stays
+  synced across machines. If the variable is empty or the library does not
+  exist yet, the step is skipped — set the path in `config.sh` and re-run
+  `setup.sh`.
 - Allows unverified Flatpak applications to appear in Software Manager.
 - Enables automatic update checks and updates in Update Manager.
 - Configures the Homelab Backup systemd user timer after the other setup steps.

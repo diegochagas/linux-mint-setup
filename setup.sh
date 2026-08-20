@@ -60,6 +60,7 @@ APT_PACKAGES=(
     rsync
     shellcheck
     sublime-text
+    timgm6mb-soundfont
     tree
     unzip
     vlc
@@ -84,6 +85,7 @@ FLATPAK_PACKAGES=(
     org.freedownloadmanager.Manager
     io.github.diegopvlk.Dosage
     io.mgba.mGBA
+    org.easyrpg.player
     org.telegram.desktop
 )
 
@@ -120,6 +122,7 @@ CLAUDE_CODE_INSTALL_URL="${CLAUDE_CODE_INSTALL_URL:-$DEFAULT_CLAUDE_CODE_INSTALL
 CLAUDE_DESKTOP_DEB_URL="${CLAUDE_DESKTOP_DEB_URL:-$DEFAULT_CLAUDE_DESKTOP_DEB_URL}"
 ANTIMICROX_PROFILES_BASE_URL="${ANTIMICROX_PROFILES_BASE_URL:-$DEFAULT_ANTIMICROX_PROFILES_BASE_URL}"
 GBA_LIBRARY_DIR="${GBA_LIBRARY_DIR:-}"
+RPG_MAKER_LIBRARY_DIR="${RPG_MAKER_LIBRARY_DIR:-}"
 
 ########################################
 # Runtime options
@@ -1707,6 +1710,78 @@ configure_mgba() {
     SUMMARY+=("mGBA|$CONFIGURATION_MESSAGE")
 }
 
+########################################
+# EasyRPG Player (Flatpak) is given
+# access to the RPG Maker library set by
+# RPG_MAKER_LIBRARY_DIR in config.sh — a
+# directory with one subfolder per game
+# and the shared RTP assets in RTP/2000
+# and RTP/2003 — and the RTP is copied
+# to EasyRPG's default search path
+# together with a GM soundfont for MIDI
+# music. Games are opened with EasyRPG's
+# built-in game browser and saves are
+# written inside each game folder,
+# keeping progress synced across
+# machines. The library is resolved with
+# realpath because the Flatpak sandbox
+# does not follow symlinks that point
+# outside the granted paths.
+########################################
+easyrpg_config_matches() {
+    local library_path="$1"
+    local rtp_dir="$2"
+    local soundfont="$3"
+
+    flatpak override --user --show org.easyrpg.player 2>/dev/null |
+        grep -Fq "$library_path" &&
+        directory_exists "$rtp_dir/2000" &&
+        directory_exists "$rtp_dir/2003" &&
+        file_exists "$soundfont"
+}
+
+configure_easyrpg() {
+    print_step "Configuring EasyRPG Player"
+
+    local rtp_dir="$HOME/.var/app/org.easyrpg.player/data/rtp"
+    local soundfont="$rtp_dir/2000/easyrpg.soundfont"
+    local library_path
+
+    if [[ -z "$RPG_MAKER_LIBRARY_DIR" ]]; then
+        print_info "⏭️ RPG_MAKER_LIBRARY_DIR is not set."
+        print_info "   Set it in config.sh and re-run setup.sh."
+        SUMMARY+=("EasyRPG Player|⏭️ RPG_MAKER_LIBRARY_DIR not set")
+        return
+    fi
+
+    if ! directory_exists "$RPG_MAKER_LIBRARY_DIR"; then
+        print_info "⏭️ RPG Maker library not found (not synced yet?):"
+        print_info "   $RPG_MAKER_LIBRARY_DIR"
+        print_info "   Re-run setup.sh after the library is available."
+        SUMMARY+=("EasyRPG Player|⏭️ RPG Maker library not found")
+        return
+    fi
+
+    library_path="$(realpath "$RPG_MAKER_LIBRARY_DIR")"
+
+    if easyrpg_config_matches "$library_path" "$rtp_dir" "$soundfont"; then
+        print_info "⏭️ EasyRPG Player already configured"
+        SUMMARY+=("EasyRPG Player|⏭️ Already configured")
+        return
+    fi
+
+    run flatpak override --user org.easyrpg.player \
+        --filesystem="$library_path"
+
+    run mkdir -p "$rtp_dir"
+
+    run rsync -a "$RPG_MAKER_LIBRARY_DIR/RTP/" "$rtp_dir/"
+
+    run cp /usr/share/sounds/sf2/TimGM6mb.sf2 "$soundfont"
+
+    SUMMARY+=("EasyRPG Player|$CONFIGURATION_MESSAGE")
+}
+
 fonts_match() {
     local source_dir="$1"
     local target_dir="$2"
@@ -1785,6 +1860,8 @@ install_system() {
     configure_antimicrox
 
     configure_mgba
+
+    configure_easyrpg
 
     configure_update_manager
 

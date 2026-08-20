@@ -64,6 +64,24 @@ CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redir
 GBA_LIBRARY_DIR=""
 
 #
+# RPG Maker library
+#
+# Directory that contains the RPG Maker games library:
+# one subfolder per game plus the shared RTP assets in
+# RTP/2000 and RTP/2003 subfolders, e.g. a folder
+# synced by Nextcloud. EasyRPG Player is granted
+# access to the library and the RTP is copied to its
+# default search path together with a GM soundfont for
+# MIDI music. Open the games with EasyRPG's built-in
+# game browser; saves are written inside each game
+# folder, so progress stays synced across machines.
+#
+# Leave empty to skip the EasyRPG Player configuration
+# step.
+#
+RPG_MAKER_LIBRARY_DIR=""
+
+#
 # Google Gemini API key, forwarded to the GIMP setup
 # for its AI plug-ins (Filters > AI).
 #
