@@ -51,6 +51,19 @@ CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
 
 #
+# Game Boy Advance library
+#
+# Directory that contains the GBA library: ROMs in a
+# Rooms/ subfolder and save files in a Saves/ subfolder,
+# e.g. a folder synced by Nextcloud. mGBA is configured
+# to open ROMs from Rooms/ and to read and write saves
+# in Saves/.
+#
+# Leave empty to skip the mGBA configuration step.
+#
+GBA_LIBRARY_DIR=""
+
+#
 # Google Gemini API key, forwarded to the GIMP setup
 # for its AI plug-ins (Filters > AI).
 #

@@ -83,6 +83,7 @@ FLATPAK_PACKAGES=(
     org.kde.kdenlive
     org.freedownloadmanager.Manager
     io.github.diegopvlk.Dosage
+    io.mgba.mGBA
     org.telegram.desktop
 )
 
@@ -118,6 +119,7 @@ TAILSCALE_INSTALL_URL="${TAILSCALE_INSTALL_URL:-$DEFAULT_TAILSCALE_INSTALL_URL}"
 CLAUDE_CODE_INSTALL_URL="${CLAUDE_CODE_INSTALL_URL:-$DEFAULT_CLAUDE_CODE_INSTALL_URL}"
 CLAUDE_DESKTOP_DEB_URL="${CLAUDE_DESKTOP_DEB_URL:-$DEFAULT_CLAUDE_DESKTOP_DEB_URL}"
 ANTIMICROX_PROFILES_BASE_URL="${ANTIMICROX_PROFILES_BASE_URL:-$DEFAULT_ANTIMICROX_PROFILES_BASE_URL}"
+GBA_LIBRARY_DIR="${GBA_LIBRARY_DIR:-}"
 
 ########################################
 # Runtime options
@@ -1643,6 +1645,68 @@ configure_antimicrox() {
     SUMMARY+=("AntiMicroX Profiles|$CONFIGURATION_MESSAGE")
 }
 
+########################################
+# mGBA (Flatpak) is pointed at the GBA
+# library set by GBA_LIBRARY_DIR in
+# config.sh so ROMs are opened from
+# Rooms/ and save files are read and
+# written in Saves/, keeping game
+# progress synced across machines.
+########################################
+mgba_config_matches() {
+    local config_file="$1"
+
+    file_exists "$config_file" &&
+        grep -Fq "savegamePath=$GBA_LIBRARY_DIR/Saves" "$config_file" &&
+        grep -Fq "lastDirectory=$GBA_LIBRARY_DIR/Rooms" "$config_file"
+}
+
+configure_mgba() {
+    print_step "Configuring mGBA"
+
+    local config_dir="$HOME/.var/app/io.mgba.mGBA/config/mgba"
+    local config_file="$config_dir/config.ini"
+
+    if [[ -z "$GBA_LIBRARY_DIR" ]]; then
+        print_info "⏭️ GBA_LIBRARY_DIR is not set."
+        print_info "   Set it in config.sh and re-run setup.sh."
+        SUMMARY+=("mGBA|⏭️ GBA_LIBRARY_DIR not set")
+        return
+    fi
+
+    if ! directory_exists "$GBA_LIBRARY_DIR"; then
+        print_info "⏭️ GBA library not found (not synced yet?):"
+        print_info "   $GBA_LIBRARY_DIR"
+        print_info "   Re-run setup.sh after the library is available."
+        SUMMARY+=("mGBA|⏭️ GBA library not found")
+        return
+    fi
+
+    if mgba_config_matches "$config_file"; then
+        print_info "⏭️ mGBA already configured"
+        SUMMARY+=("mGBA|⏭️ Already configured")
+        return
+    fi
+
+    run mkdir -p "$config_dir"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ Point mGBA at the GBA library in config.ini"
+    elif file_exists "$config_file" && grep -q '^\[ports\.qt\]' "$config_file"; then
+        sed -i '/^savegamePath=/d; /^lastDirectory=/d' "$config_file"
+        sed -i "/^\[ports\.qt\]/a lastDirectory=$GBA_LIBRARY_DIR/Rooms" "$config_file"
+        sed -i "/^\[ports\.qt\]/a savegamePath=$GBA_LIBRARY_DIR/Saves" "$config_file"
+    else
+        {
+            echo "[ports.qt]"
+            echo "savegamePath=$GBA_LIBRARY_DIR/Saves"
+            echo "lastDirectory=$GBA_LIBRARY_DIR/Rooms"
+        } >> "$config_file"
+    fi
+
+    SUMMARY+=("mGBA|$CONFIGURATION_MESSAGE")
+}
+
 fonts_match() {
     local source_dir="$1"
     local target_dir="$2"
@@ -1719,6 +1783,8 @@ install_system() {
     configure_fonts
 
     configure_antimicrox
+
+    configure_mgba
 
     configure_update_manager
 
