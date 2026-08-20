@@ -19,12 +19,11 @@ permissions. Keep an internet connection active while it runs.
 
 ## Step 2 - Manual Post-Install Steps
 
-1. Install the fonts located in the `Softwares` folder.
-2. Configure automatic system snapshots:
+1. Configure automatic system snapshots:
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
 Weekly - Keep 4 > Next > Next > Finish`.
-3. Open a new terminal and run `claude` once to sign in to Claude Code.
-4. If Claude for Firefox needs to be loaded manually, open
+2. Open a new terminal and run `claude` once to sign in to Claude Code.
+3. If Claude for Firefox needs to be loaded manually, open
    `about:debugging#/runtime/this-firefox`, click `Load Temporary Add-on`,
    and select `~/.claude/firefox/extension/manifest.json`.
 
@@ -40,7 +39,7 @@ actions:
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq, AntiMicroX,
   unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
-  Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Docker,
+  Nextcloud Desktop, FFmpeg, fontconfig, GParted, Tree, ShellCheck, Docker,
   Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, and supporting libraries.
 - Configures Docker after installation by adding the current user to the
   `docker` group, fixing existing `~/.docker` ownership if needed, and enabling
@@ -176,8 +175,11 @@ The script creates these Cinnamon keyboard shortcuts:
 It also:
 
 - Configures CopyQ to start automatically.
+- Installs the fonts from the `fonts` folder into
+  `~/.local/share/fonts/linux-mint-setup` and refreshes the font cache with
+  `fc-cache -f`.
 - Installs the AntiMicroX controller profiles from `antimicrox/profiles`
-  (Xpadder profiles converted to Linux) into `~/.config/antimicrox/profiles`:
+  into `~/.config/antimicrox/profiles`:
   ALendaDoHeroi, ApocalypseAcabouAPutaria, DragonBallZFighters, FallGuys,
   Jaspion, MegamanCollection, and SegaMegaDriveEGenesisClassics. When the
   repository files are not available locally, they are downloaded from GitHub.

@@ -42,6 +42,7 @@ APT_PACKAGES=(
     docker.io
     ffmpeg
     firefox
+    fontconfig
     freerdp3-x11
     gh
     git
@@ -1642,6 +1643,44 @@ configure_antimicrox() {
     SUMMARY+=("AntiMicroX Profiles|$CONFIGURATION_MESSAGE")
 }
 
+fonts_match() {
+    local source_dir="$1"
+    local target_dir="$2"
+    local font
+
+    directory_exists "$target_dir" || return 1
+
+    for font in "$source_dir"/*; do
+        [[ -f "$font" ]] || continue
+        cmp -s "$font" "$target_dir/$(basename "$font")" || return 1
+    done
+}
+
+configure_fonts() {
+    print_step "Configuring Fonts"
+
+    local source_dir="$SCRIPT_DIR/fonts"
+    local target_dir="$HOME/.local/share/fonts/linux-mint-setup"
+    local font
+
+    if fonts_match "$source_dir" "$target_dir"; then
+        print_info "⏭️ Fonts already configured"
+        SUMMARY+=("Fonts|⏭️ Already configured")
+        return
+    fi
+
+    run mkdir -p "$target_dir"
+
+    for font in "$source_dir"/*; do
+        [[ -f "$font" ]] || continue
+        run cp "$font" "$target_dir/$(basename "$font")"
+    done
+
+    run fc-cache -f "$target_dir"
+
+    SUMMARY+=("Fonts|$CONFIGURATION_MESSAGE")
+}
+
 install_system() {
     install_apt_packages
 
@@ -1676,7 +1715,9 @@ install_system() {
     configure_keyboard_shortcuts
 
     configure_copyq
-    
+
+    configure_fonts
+
     configure_antimicrox
 
     configure_update_manager
