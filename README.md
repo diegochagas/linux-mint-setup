@@ -38,7 +38,7 @@ actions:
 - Removes Linux Mint's Snap restriction by renaming `nosnap.pref`, when present.
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
-  Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq,
+  Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq, AntiMicroX,
   unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
   Nextcloud Desktop, FFmpeg, GParted, Tree, ShellCheck, Docker,
   Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, and supporting libraries.
@@ -176,6 +176,12 @@ The script creates these Cinnamon keyboard shortcuts:
 It also:
 
 - Configures CopyQ to start automatically.
+- Installs the AntiMicroX controller profiles from `antimicrox/profiles`
+  (Xpadder profiles converted to Linux) into `~/.config/antimicrox/profiles`:
+  ALendaDoHeroi, ApocalypseAcabouAPutaria, DragonBallZFighters, FallGuys,
+  Jaspion, MegamanCollection, and SegaMegaDriveEGenesisClassics. When the
+  repository files are not available locally, they are downloaded from GitHub.
+  Open AntiMicroX, click `Load`, and pick the game's profile before playing.
 - Allows unverified Flatpak applications to appear in Software Manager.
 - Enables automatic update checks and updates in Update Manager.
 - Configures the Homelab Backup systemd user timer after the other setup steps.

@@ -34,6 +34,7 @@ readonly ARCHITECTURE
 
 APT_PACKAGES=(
     anki
+    antimicrox
     btop
     copyq
     curl
@@ -99,6 +100,7 @@ DEFAULT_WINBOAT_APPIMAGE_URL="https://github.com/TibixDev/winboat/releases/downl
 DEFAULT_TAILSCALE_INSTALL_URL="https://tailscale.com/install.sh"
 DEFAULT_CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 DEFAULT_CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
+DEFAULT_ANTIMICROX_PROFILES_BASE_URL="https://raw.githubusercontent.com/diegochagas/linux-mint-setup/main/antimicrox/profiles"
 
 GIMP_SETUP_REPO="${GIMP_SETUP_REPO:-$DEFAULT_GIMP_SETUP_REPO}"
 HOMELAB_BACKUP_REPO="${HOMELAB_BACKUP_REPO:-$DEFAULT_HOMELAB_BACKUP_REPO}"
@@ -114,6 +116,7 @@ WINBOAT_APPIMAGE_URL="${WINBOAT_APPIMAGE_URL:-$DEFAULT_WINBOAT_APPIMAGE_URL}"
 TAILSCALE_INSTALL_URL="${TAILSCALE_INSTALL_URL:-$DEFAULT_TAILSCALE_INSTALL_URL}"
 CLAUDE_CODE_INSTALL_URL="${CLAUDE_CODE_INSTALL_URL:-$DEFAULT_CLAUDE_CODE_INSTALL_URL}"
 CLAUDE_DESKTOP_DEB_URL="${CLAUDE_DESKTOP_DEB_URL:-$DEFAULT_CLAUDE_DESKTOP_DEB_URL}"
+ANTIMICROX_PROFILES_BASE_URL="${ANTIMICROX_PROFILES_BASE_URL:-$DEFAULT_ANTIMICROX_PROFILES_BASE_URL}"
 
 ########################################
 # Runtime options
@@ -1588,6 +1591,57 @@ EOF
     SUMMARY+=("Homelab Backup|$CONFIGURATION_MESSAGE")
 }
 
+ANTIMICROX_PROFILES=(
+    ALendaDoHeroi.gamecontroller.amgp
+    ApocalypseAcabouAPutaria.gamecontroller.amgp
+    DragonBallZFighters.gamecontroller.amgp
+    FallGuys.gamecontroller.amgp
+    Jaspion.gamecontroller.amgp
+    MegamanCollection.gamecontroller.amgp
+    SegaMegaDriveEGenesisClassics.gamecontroller.amgp
+)
+
+antimicrox_profiles_match() {
+    local source_dir="$1"
+    local target_dir="$2"
+    local profile
+
+    for profile in "${ANTIMICROX_PROFILES[@]}"; do
+        file_exists "$target_dir/$profile" || return 1
+
+        if file_exists "$source_dir/$profile"; then
+            cmp -s "$source_dir/$profile" "$target_dir/$profile" || return 1
+        fi
+    done
+}
+
+configure_antimicrox() {
+    print_step "Configuring AntiMicroX controller profiles"
+
+    local source_dir="$SCRIPT_DIR/antimicrox/profiles"
+    local target_dir="$HOME/.config/antimicrox/profiles"
+    local profile
+
+    if antimicrox_profiles_match "$source_dir" "$target_dir"; then
+        print_info "⏭️ AntiMicroX profiles already configured"
+        SUMMARY+=("AntiMicroX Profiles|⏭️ Already configured")
+        return
+    fi
+
+    run mkdir -p "$target_dir"
+
+    for profile in "${ANTIMICROX_PROFILES[@]}"; do
+        if file_exists "$source_dir/$profile"; then
+            run cp "$source_dir/$profile" "$target_dir/$profile"
+        else
+            run curl -fsSL -o "$target_dir/$profile" \
+                "$ANTIMICROX_PROFILES_BASE_URL/$profile"
+        fi
+    done
+
+    SUMMARY+=("AntiMicroX Profiles|$CONFIGURATION_MESSAGE")
+}
+
 install_system() {
     install_apt_packages
 
@@ -1623,6 +1677,8 @@ install_system() {
 
     configure_copyq
     
+    configure_antimicrox
+
     configure_update_manager
 
     configure_homelab_backup
