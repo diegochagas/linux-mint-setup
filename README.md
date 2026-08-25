@@ -278,18 +278,13 @@ It also:
   After disabling Wi-Fi power saving, the random network drops stopped occurring
   on the MediaTek MT7921 adapter under Linux Mint.
 
-### ZimaOS Apps
+### ZimaOS Server
 
-The following apps are installed on ZimaOS, a personal NAS/home server operating system:
-
-- **Cloudflared** – Cloudflare Tunnel client for secure outbound access to self-hosted services.
-- **Immich** – Self-hosted photo and video backup and management solution.
-- **Jellyfin** – Open-source media server for streaming movies, music, and TV shows.
-- **Nextcloud** – Self-hosted cloud platform for file sync, sharing, and collaboration.
-- **Pi-hole** – Network-wide DNS-based ad blocker.
-- **qBittorrent** – Open-source BitTorrent client for downloading and managing torrents.
-- **Tailscale** – VPN mesh network for secure remote access to the NAS.
-- **Vaultwarden** – Lightweight, self-hosted Bitwarden-compatible password manager server.
+Everything related to the ZimaOS home server — the apps it runs and how to
+reinstall them with their customizations after a fresh installation — is
+handled by the [zimaos-setup](https://github.com/diegochagas/zimaos-setup)
+repository. Its data backup and restore chain lives in
+[homelab-backup](https://github.com/diegochagas/homelab-backup).
 
 ### Other Notes
 
