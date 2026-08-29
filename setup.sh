@@ -92,7 +92,6 @@ FLATPAK_PACKAGES=(
 DEFAULT_GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"
 DEFAULT_HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 DEFAULT_HOMELAB_BACKUP_DIR="$HOME/Projects/homelab-backup"
-DEFAULT_CLAUDE_FIREFOX_REPO="https://github.com/NetVar1337/claude-for-firefox.git"
 DEFAULT_SUBLIME_APT_GPG_URL="https://download.sublimetext.com/sublimehq-pub.gpg"
 DEFAULT_SUBLIME_APT_REPOSITORY="deb https://download.sublimetext.com/ apt/stable/"
 DEFAULT_REMOTE_MOUSE_ZIP_URL="https://www.remotemouse.net/downloads/linux/RemoteMouse_x86_64.zip"
@@ -108,7 +107,6 @@ DEFAULT_ANTIMICROX_PROFILES_BASE_URL="https://raw.githubusercontent.com/diegocha
 
 GIMP_SETUP_REPO="${GIMP_SETUP_REPO:-$DEFAULT_GIMP_SETUP_REPO}"
 HOMELAB_BACKUP_REPO="${HOMELAB_BACKUP_REPO:-$DEFAULT_HOMELAB_BACKUP_REPO}"
-CLAUDE_FIREFOX_REPO="${CLAUDE_FIREFOX_REPO:-$DEFAULT_CLAUDE_FIREFOX_REPO}"
 SUBLIME_APT_GPG_URL="${SUBLIME_APT_GPG_URL:-$DEFAULT_SUBLIME_APT_GPG_URL}"
 SUBLIME_APT_REPOSITORY="${SUBLIME_APT_REPOSITORY:-$DEFAULT_SUBLIME_APT_REPOSITORY}"
 REMOTE_MOUSE_ZIP_URL="${REMOTE_MOUSE_ZIP_URL:-$DEFAULT_REMOTE_MOUSE_ZIP_URL}"
@@ -134,7 +132,6 @@ INSTALLATION_MESSAGE=""
 CONFIGURATION_MESSAGE=""
 
 SUMMARY=()
-CLAUDE_CODE_INSTALLER_COMPLETED=false
 
 ########################################
 # Functions
@@ -1256,8 +1253,6 @@ install_claude_code() {
         curl -fsSL "$CLAUDE_CODE_INSTALL_URL" | bash
     fi
 
-    CLAUDE_CODE_INSTALLER_COMPLETED=true
-
     ensure_user_local_bin_on_path
 
     if [[ "$DRY_RUN" == false ]] && ! find_claude_code_binary >/dev/null; then
@@ -1300,48 +1295,6 @@ install_claude_desktop() {
     run rm -f "$CLAUDE_DESKTOP_DEB"
 
     SUMMARY+=("Claude Desktop|$INSTALLATION_MESSAGE")
-}
-
-install_claude_for_firefox() {
-    print_step "Installing Claude for Firefox"
-
-    if [[ "$CLAUDE_CODE_INSTALLER_COMPLETED" != true ]]; then
-        print_info "❌ Claude for Firefox requires the Claude Code installer to complete first."
-        SUMMARY+=("Claude for Firefox|❌ Claude Code installer not run")
-        exit 1
-    fi
-
-    local extension_manifest="$HOME/.claude/firefox/extension/manifest.json"
-    local native_host_dir="$HOME/.mozilla/native-messaging-hosts"
-    local browser_native_host="$native_host_dir/com.anthropic.claude_browser_extension.json"
-    local code_native_host="$native_host_dir/com.anthropic.claude_code_browser_extension.json"
-
-    if file_exists "$extension_manifest" && file_exists "$browser_native_host" && file_exists "$code_native_host"; then
-        print_info "⏭️ Claude for Firefox already installed"
-        SUMMARY+=("Claude for Firefox|⏭️ Already installed")
-        return
-    fi
-
-    local claude_code_bin
-
-    if ! claude_code_bin="$(find_claude_code_binary 2>/dev/null)"; then
-        if [[ "$DRY_RUN" == true ]]; then
-            claude_code_bin="$HOME/.local/bin/claude"
-        else
-            print_info "❌ Claude Code is required before installing Claude for Firefox."
-            SUMMARY+=("Claude for Firefox|❌ Missing Claude Code")
-            exit 1
-        fi
-    fi
-
-    local CLAUDE_FIREFOX_DIR
-    CLAUDE_FIREFOX_DIR="$(mktemp -d)"
-
-    run git clone --depth 1 "$CLAUDE_FIREFOX_REPO" "$CLAUDE_FIREFOX_DIR"
-    run env CLAUDE_CODE_BIN="$claude_code_bin" bash "$CLAUDE_FIREFOX_DIR/install.sh"
-    run rm -rf "$CLAUDE_FIREFOX_DIR"
-
-    SUMMARY+=("Claude for Firefox|$INSTALLATION_MESSAGE")
 }
 
 shortcut_matches() {
@@ -1848,8 +1801,6 @@ install_system() {
     install_claude_code
 
     install_claude_desktop
-
-    install_claude_for_firefox
 
     configure_keyboard_shortcuts
 
