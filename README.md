@@ -6,6 +6,29 @@
 
 Personal post-install setup for Linux Mint. Follow the steps below in order.
 
+## Requirements
+
+This assumes Linux Mint is already installed — the script does not
+install the OS itself, only what runs on top of it.
+
+| Resource | Linux Mint's own minimum | Comfortable for this script's full install |
+| --- | --- | --- |
+| RAM | 2 GB (4 GB recommended by Linux Mint) | 8 GB+ (16 GB if you use Docker containers or WinBoat) |
+| Disk (free space) | 20 GB (100 GB recommended by Linux Mint) | 60 GB+ — Snap, Flatpak, Docker images and the GIMP ecosystem all add up |
+| Display | 1024×768 | — |
+| CPU | x86_64 | x86_64 (AMD64) for the full app set; ARM64 gets a reduced set, see below |
+
+- **CPU architecture matters here, not just power.** Some apps this
+  script installs are AMD64-only (Remote Mouse, balenaEtcher, WinBoat,
+  Claude Desktop), some support AMD64 and ARM64 (`immich-go`,
+  AppManager/Wattage), and the rest install on either. On ARM64 the
+  script skips the AMD64-only pieces automatically and says so in its
+  summary.
+- Docker, the [GIMP ecosystem](https://github.com/diegochagas/gimp-setup)
+  and WinBoat (a Windows-app compatibility layer) are the heaviest
+  consumers of RAM/disk if you actually use them — a machine that skips
+  those can get by with less than the "comfortable" numbers above.
+
 ## Step 1 - Run the Automated Setup Script
 
 Open a terminal and run:
