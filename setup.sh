@@ -70,7 +70,6 @@ APT_PACKAGES=(
 
 SNAP_PACKAGES=(
     snapd
-    surfshark
     code
     insomnia
     localsend
@@ -87,6 +86,7 @@ FLATPAK_PACKAGES=(
     io.mgba.mGBA
     org.easyrpg.player
     org.telegram.desktop
+    com.surfshark.Surfshark
 )
 
 DEFAULT_GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"

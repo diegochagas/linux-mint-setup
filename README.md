@@ -83,7 +83,6 @@ actions:
 
 The script installs Snap support and then installs:
 
-- Surfshark
 - Visual Studio Code
 - Insomnia
 - LocalSend
@@ -102,6 +101,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - mGBA
 - EasyRPG Player
 - Telegram Desktop
+- Surfshark
 
 ### GIMP Ecosystem
 
