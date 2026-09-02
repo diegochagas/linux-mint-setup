@@ -98,7 +98,6 @@ The script installs Flatpak, adds Flathub, and installs:
 - Kdenlive
 - Free Download Manager
 - Dosage
-- mGBA
 - EasyRPG Player
 - Telegram Desktop
 - Surfshark
@@ -196,13 +195,6 @@ It also:
   Jaspion, MegamanCollection, and SegaMegaDriveEGenesisClassics. When the
   repository files are not available locally, they are downloaded from GitHub.
   Open AntiMicroX, click `Load`, and pick the game's profile before playing.
-- Points mGBA at the Game Boy Advance library set by `GBA_LIBRARY_DIR` in
-  `config.sh` — a directory with ROMs in a `Rooms/` subfolder and save files
-  in a `Saves/` subfolder, e.g. a folder synced by Nextcloud: the ROM file
-  dialog opens in `Rooms/` and saves are read and written in `Saves/`, so game
-  progress stays synced across machines. If the variable is empty or the
-  library does not exist yet, the step is skipped — set the path in
-  `config.sh` and re-run `setup.sh`.
 - Grants EasyRPG Player access to the RPG Maker library set by
   `RPG_MAKER_LIBRARY_DIR` in `config.sh` — a directory with one subfolder per
   game and the shared RTP assets in `RTP/2000` and `RTP/2003` subfolders, e.g.
