@@ -185,6 +185,9 @@ The script creates these Cinnamon keyboard shortcuts:
 
 It also:
 
+- Configures `~/.XCompose` so pressing the acute-accent dead key (`´`) followed
+  by `c` produces `ç`, and `´` followed by `Shift+C` produces `Ç`. Restart
+  applications that were open during setup before testing the new sequence.
 - Configures CopyQ to start automatically.
 - Installs the fonts from the `fonts` folder into
   `~/.local/share/fonts/linux-mint-setup` and refreshes the font cache with
@@ -302,6 +305,9 @@ repository. Its data backup and restore chain lives in
   user systemd timer.
 - Some operations may already be complete when the script is run again. Review
   any errors before retrying.
-- Type the cedilla character (`ç`) with `AltGr + ,` (comma).
+- Type the cedilla character (`ç`) with `´` followed by `c`; type the uppercase
+  form (`Ç`) with `´` followed by `Shift+C`. The `English (US, intl., with dead
+  keys)` layout must be enabled. The setup script adds these rules to
+  `~/.XCompose` and preserves other custom Compose entries.
 - The correct audio profile in Sound Settings is `Headset JBL TUNE770NC`.
 - Install Python packages only for your user with `python3 -m pip install --user --break-system-packages PACKAGE_NAME`

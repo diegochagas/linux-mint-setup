@@ -1381,6 +1381,46 @@ configure_keyboard_shortcuts() {
     SUMMARY+=("Keyboard Shortcuts|$CONFIGURATION_MESSAGE")
 }
 
+configure_xcompose() {
+    print_step "Configuring XCompose"
+
+    local source_file="$SCRIPT_DIR/XCompose"
+    local target_file="$HOME/.XCompose"
+    local rule
+    local missing_rules=()
+
+    if ! file_exists "$target_file"; then
+        run cp "$source_file" "$target_file"
+        SUMMARY+=("XCompose|$CONFIGURATION_MESSAGE")
+        return
+    fi
+
+    while IFS= read -r rule; do
+        [[ -n "$rule" ]] || continue
+        if ! grep -Fqx "$rule" "$target_file"; then
+            missing_rules+=("$rule")
+        fi
+    done < <(sed -n '/^<dead_acute>/p' "$source_file")
+
+    if (( ${#missing_rules[@]} == 0 )); then
+        print_info "⏭️ XCompose already configured"
+        SUMMARY+=("XCompose|⏭️ Already configured")
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        for rule in "${missing_rules[@]}"; do
+            print_info "➜ append $rule to $target_file"
+        done
+    else
+        for rule in "${missing_rules[@]}"; do
+            printf '\n%s\n' "$rule" >> "$target_file"
+        done
+    fi
+
+    SUMMARY+=("XCompose|$CONFIGURATION_MESSAGE")
+}
+
 configure_copyq() {
     print_step "Configuring CopyQ"
 
@@ -1739,6 +1779,8 @@ install_system() {
     install_claude_desktop
 
     configure_keyboard_shortcuts
+
+    configure_xcompose
 
     configure_copyq
 
