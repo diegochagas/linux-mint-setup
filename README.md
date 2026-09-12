@@ -58,7 +58,7 @@ actions:
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
   Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq, AntiMicroX,
-  unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
+  unrar, unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
   Nextcloud Desktop, FFmpeg, fontconfig, GParted, Tree, ShellCheck, Docker,
   Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, the TimGM6mb
   SoundFont, and supporting libraries.

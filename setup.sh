@@ -62,6 +62,7 @@ APT_PACKAGES=(
     sublime-text
     timgm6mb-soundfont
     tree
+    unrar
     unzip
     vlc
     xclip
