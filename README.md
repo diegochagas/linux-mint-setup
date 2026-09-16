@@ -20,7 +20,7 @@ install the OS itself, only what runs on top of it.
 
 - **CPU architecture matters here, not just power.** Some apps this
   script installs are AMD64-only (Remote Mouse, balenaEtcher, WinBoat,
-  Claude Desktop), some support AMD64 and ARM64 (`immich-go`,
+  Claude Desktop), some support AMD64 and ARM64 (`immich-go`, LocalSend,
   AppManager/Wattage), and the rest install on either. On ARM64 the
   script skips the AMD64-only pieces automatically and says so in its
   summary.
@@ -68,6 +68,10 @@ actions:
   before using Docker without `sudo`.
 - On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
+- On AMD64 and ARM64 systems, installs the latest
+  [LocalSend](https://localsend.org/) `.deb` release (not the Snap Store
+  version — its AppArmor sandboxing breaks NetworkManager access and the
+  system tray icon).
 - On AMD64 and ARM64 systems, installs
   [AppManager](https://github.com/kem-a/AppManager) and uses it to install the
   [Wattage](https://github.com/v81d/wattage) nightly AppImage from
@@ -85,7 +89,6 @@ The script installs Snap support and then installs:
 
 - Visual Studio Code
 - Insomnia
-- LocalSend
 
 ### Flatpak Applications
 
@@ -294,6 +297,9 @@ repository. Its data backup and restore chain lives in
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
 - `immich-go` is installed only on AMD64 and ARM64 systems.
+- LocalSend is installed only on AMD64 and ARM64 systems, from its official
+  `.deb` release rather than the Snap Store, and any existing Snap install is
+  removed first.
 - AppManager and Wattage are installed only on AMD64 and ARM64 systems. WinBoat
   is installed only on AMD64 systems. If a configured AppImage or nightly
   artifact is temporarily unavailable, the script reports that in the summary

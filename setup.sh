@@ -73,7 +73,6 @@ SNAP_PACKAGES=(
     snapd
     code
     insomnia
-    localsend
 )
 
 FLATPAK_PACKAGES=(
@@ -97,6 +96,7 @@ DEFAULT_SUBLIME_APT_REPOSITORY="deb https://download.sublimetext.com/ apt/stable
 DEFAULT_REMOTE_MOUSE_ZIP_URL="https://www.remotemouse.net/downloads/linux/RemoteMouse_x86_64.zip"
 DEFAULT_BALENA_ETCHER_RELEASES_API_URL="https://api.github.com/repos/balena-io/etcher/releases/latest"
 DEFAULT_IMMICH_GO_RELEASES_API_URL="https://api.github.com/repos/simulot/immich-go/releases/latest"
+DEFAULT_LOCALSEND_RELEASES_API_URL="https://api.github.com/repos/localsend/localsend/releases/latest"
 DEFAULT_APP_MANAGER_RELEASES_API_URL="https://api.github.com/repos/kem-a/AppManager/releases/latest"
 DEFAULT_WATTAGE_NIGHTLY_BASE_URL="https://nightly.link/v81d/wattage/workflows/build-appimage/main"
 DEFAULT_WINBOAT_APPIMAGE_URL="https://github.com/TibixDev/winboat/releases/download/v0.9.0/winboat-0.9.0-x86_64.AppImage"
@@ -112,6 +112,7 @@ SUBLIME_APT_REPOSITORY="${SUBLIME_APT_REPOSITORY:-$DEFAULT_SUBLIME_APT_REPOSITOR
 REMOTE_MOUSE_ZIP_URL="${REMOTE_MOUSE_ZIP_URL:-$DEFAULT_REMOTE_MOUSE_ZIP_URL}"
 BALENA_ETCHER_RELEASES_API_URL="${BALENA_ETCHER_RELEASES_API_URL:-$DEFAULT_BALENA_ETCHER_RELEASES_API_URL}"
 IMMICH_GO_RELEASES_API_URL="${IMMICH_GO_RELEASES_API_URL:-$DEFAULT_IMMICH_GO_RELEASES_API_URL}"
+LOCALSEND_RELEASES_API_URL="${LOCALSEND_RELEASES_API_URL:-$DEFAULT_LOCALSEND_RELEASES_API_URL}"
 APP_MANAGER_RELEASES_API_URL="${APP_MANAGER_RELEASES_API_URL:-$DEFAULT_APP_MANAGER_RELEASES_API_URL}"
 WATTAGE_NIGHTLY_BASE_URL="${WATTAGE_NIGHTLY_BASE_URL:-$DEFAULT_WATTAGE_NIGHTLY_BASE_URL}"
 WINBOAT_APPIMAGE_URL="${WINBOAT_APPIMAGE_URL:-$DEFAULT_WINBOAT_APPIMAGE_URL}"
@@ -815,6 +816,62 @@ install_immich_go() {
         print_info "Skipping immich-go: Linux $ARCHITECTURE release asset is not configured."
     fi   
     SUMMARY+=("immich-go|$INSTALLATION_MESSAGE")  
+}
+
+########################################
+# LocalSend is installed from its official
+# .deb release instead of the Snap Store:
+# the Snap build is sandboxed by AppArmor,
+# which blocks its NetworkManager D-Bus
+# access (breaking the app on startup) and
+# its system tray icon registration. The
+# .deb build is unsandboxed and doesn't
+# have either problem.
+########################################
+install_localsend() {
+    print_step "Installing LocalSend"
+
+    if is_snap_installed localsend; then
+        run sudo snap remove localsend
+    fi
+
+    if is_apt_installed localsend; then
+        print_info "⏭️ LocalSend already installed"
+        SUMMARY+=("LocalSend|⏭️ Already installed")
+        return
+    fi
+
+    local LOCALSEND_ARCH=""
+
+    case "$ARCHITECTURE" in
+        amd64) LOCALSEND_ARCH="x86-64" ;;
+        arm64) LOCALSEND_ARCH="arm-64" ;;
+        *) LOCALSEND_ARCH="" ;;
+    esac
+
+    if [[ -z "$LOCALSEND_ARCH" ]]; then
+        print_info "⏭️ LocalSend is not available for $ARCHITECTURE."
+        SUMMARY+=("LocalSend|⏭️ Unsupported architecture")
+        return
+    fi
+
+    local LOCALSEND_DEB_URL
+    LOCALSEND_DEB_URL="$(curl -fsSL "$LOCALSEND_RELEASES_API_URL" | jq -r --arg arch "$LOCALSEND_ARCH" '.assets[] | select(.name | endswith("-linux-" + $arch + ".deb")) | .browser_download_url' | head -n 1)"
+
+    if [[ -z "$LOCALSEND_DEB_URL" || "$LOCALSEND_DEB_URL" == "null" ]]; then
+        print_info "⚠️ No LocalSend $LOCALSEND_ARCH .deb release asset was found."
+        SUMMARY+=("LocalSend|⚠️ Release asset unavailable")
+        return
+    fi
+
+    local LOCALSEND_DEB
+    LOCALSEND_DEB="$(mktemp --suffix=.deb)"
+
+    run curl -fsSL "$LOCALSEND_DEB_URL" -o "$LOCALSEND_DEB"
+    run sudo apt install -y "$LOCALSEND_DEB"
+    run rm -f "$LOCALSEND_DEB"
+
+    SUMMARY+=("LocalSend|$INSTALLATION_MESSAGE")
 }
 
 appimage_artifact_arch() {
@@ -1760,6 +1817,8 @@ install_system() {
     install_balena_etcher
 
     install_immich_go
+
+    install_localsend
 
     install_app_manager
 
