@@ -192,6 +192,7 @@ It also:
   by `c` produces `ç`, and `´` followed by `Shift+C` produces `Ç`. Restart
   applications that were open during setup before testing the new sequence.
 - Configures CopyQ to start automatically.
+- Configures LocalSend to start automatically, minimized to the system tray.
 - Installs the fonts from the `fonts` folder into
   `~/.local/share/fonts/linux-mint-setup` and refreshes the font cache with
   `fc-cache -f`.

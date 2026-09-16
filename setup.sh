@@ -1506,6 +1506,39 @@ EOF
     SUMMARY+=("CopyQ|$CONFIGURATION_MESSAGE")
 }
 
+configure_localsend() {
+    print_step "Configuring LocalSend"
+
+    if ! binary_exists localsend_app; then
+        print_info "⏭️ LocalSend is not installed"
+        SUMMARY+=("LocalSend Autostart|⏭️ LocalSend not installed")
+        return
+    fi
+
+    if file_exists ~/.config/autostart/localsend_app.desktop; then
+        print_info "⏭️ LocalSend already configured"
+        SUMMARY+=("LocalSend Autostart|⏭️ Already configured")
+        return
+    fi
+
+    run mkdir -p ~/.config/autostart
+    if [[ "$DRY_RUN" == true ]]; then
+        print_info "➜ Create LocalSend autostart file"
+    else
+        cat > ~/.config/autostart/localsend_app.desktop << EOF
+[Desktop Entry]
+Type=Application
+Name=localsend_app
+Comment=localsend_app startup script
+Exec=localsend_app --hidden
+StartupNotify=false
+Terminal=false
+EOF
+    fi
+
+    SUMMARY+=("LocalSend Autostart|$CONFIGURATION_MESSAGE")
+}
+
 configure_update_manager() {
     print_step "Configuring Update Manager"
 
@@ -1843,6 +1876,8 @@ install_system() {
     configure_xcompose
 
     configure_copyq
+
+    configure_localsend
 
     configure_fonts
 
