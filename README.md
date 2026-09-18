@@ -31,14 +31,28 @@ install the OS itself, only what runs on top of it.
 
 ## Step 1 - Run the Automated Setup Script
 
-Open a terminal and run:
+The setup is split across `setup.sh`, `lib/` and `steps/` (see
+[Project Layout](#project-layout)), so download the whole repository rather
+than `setup.sh` alone. Open a terminal and run:
 
 ```bash
-wget -O setup.sh https://raw.githubusercontent.com/diegochagas/linux-mint-setup/main/setup.sh && chmod +x setup.sh && ./setup.sh
+curl -fsSL https://github.com/diegochagas/linux-mint-setup/archive/refs/heads/main.tar.gz | tar -xz && cd linux-mint-setup-main && ./setup.sh
 ```
 
+Or, with Git:
+
+```bash
+git clone https://github.com/diegochagas/linux-mint-setup.git && cd linux-mint-setup && ./setup.sh
+```
+
+To change any of the configurable values first, copy `config.sh.example` to
+`config.sh` next to `setup.sh` and edit it before running the script.
+`./setup.sh --dry-run` prints every action the script would take without
+changing anything.
+
 The script asks for the administrator password when it needs `sudo`
-permissions. Keep an internet connection active while it runs.
+permissions. Keep an internet connection active while it runs. Each run
+writes a log to the `logs/` folder.
 
 ## Step 2 - Manual Post-Install Steps
 
@@ -193,14 +207,13 @@ It also:
   applications that were open during setup before testing the new sequence.
 - Configures CopyQ to start automatically.
 - Configures LocalSend to start automatically, minimized to the system tray.
-- Installs the fonts from the `fonts` folder into
+- Installs the fonts from `steps/fonts/fonts` into
   `~/.local/share/fonts/linux-mint-setup` and refreshes the font cache with
   `fc-cache -f`.
-- Installs the AntiMicroX controller profiles from `antimicrox/profiles`
-  into `~/.config/antimicrox/profiles`:
+- Installs the AntiMicroX controller profiles from
+  `steps/antimicrox/profiles` into `~/.config/antimicrox/profiles`:
   ALendaDoHeroi, ApocalypseAcabouAPutaria, DragonBallZFighters, FallGuys,
-  Jaspion, MegamanCollection, and SegaMegaDriveEGenesisClassics. When the
-  repository files are not available locally, they are downloaded from GitHub.
+  Jaspion, MegamanCollection, and SegaMegaDriveEGenesisClassics.
   Open AntiMicroX, click `Load`, and pick the game's profile before playing.
 - Grants EasyRPG Player access to the RPG Maker library set by
   `RPG_MAKER_LIBRARY_DIR` in `config.sh` — a directory with one subfolder per
@@ -215,6 +228,56 @@ It also:
 - Allows unverified Flatpak applications to appear in Software Manager.
 - Enables automatic update checks and updates in Update Manager.
 - Configures the Homelab Backup systemd user timer after the other setup steps.
+
+## Project Layout
+
+```text
+setup.sh            Entry point: loads config.sh, lib/ and steps/, then runs
+                    the steps in the order listed in run_setup_steps
+config.sh.example   Template for the optional config.sh
+lib/
+  log.sh            Terminal output and the log file
+  exec.sh           run (dry-run aware), downloads, file writes, temporary
+                    directories and the error handler
+  step.sh           run_step, skip_step, warn_step, require_architecture
+                    and the summary
+  system.sh         File, binary, user, systemd, PATH and autostart helpers
+  packages.sh       APT, Snap, Flatpak, .deb and GitHub release helpers
+  preflight.sh      Dependency, sudo, internet and OS checks
+steps/              One setup step (install_* or configure_*) per file
+  <name>.sh         A step without extra files
+  <name>/<name>.sh  A step that ships files, kept in the same folder:
+  antimicrox/       antimicrox.sh and the profiles/ it copies
+  fonts/            fonts.sh and the fonts/ it installs
+  xcompose/         xcompose.sh and the XCompose rules it merges
+```
+
+Every step is a function that installs or configures one thing. It runs
+inside `run_step`, which prints the step header and records the result in
+the summary:
+
+- Return normally and the step is recorded as installed/configured.
+- Call `skip_step "reason"` when there is nothing to do (already installed,
+  unsupported architecture, missing configuration).
+- Call `warn_step "reason"` when the step could not complete but the setup
+  should continue (a release asset is unavailable, a download failed).
+- Use `require_architecture amd64 arm64 || return 0` to limit a step to some
+  CPU architectures.
+
+Every action that changes the system goes through `run`, `download_file`,
+`run_remote_script`, `write_file`, `write_root_file` or `append_to_file`,
+which print the action and skip it in `--dry-run` mode. Any command that
+fails aborts the setup and reports its file and line.
+
+Values that can be overridden in `config.sh` are declared with
+`: "${NAME:=default}"` at the top of the step that uses them, and listed in
+`config.sh.example`.
+
+To add a step, create `steps/<name>.sh` with its function, `source` it in
+`setup.sh` and add a `run_step` line to `run_setup_steps` in the position
+where it should run. If the step ships files (fonts, profiles, config
+snippets), put it in `steps/<name>/<name>.sh` with the files beside it and
+resolve them from `${BASH_SOURCE[0]%/*}`, as the fonts step does.
 
 ## Notes
 
