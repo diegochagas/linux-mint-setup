@@ -56,6 +56,7 @@ source "$SCRIPT_DIR/steps/remote-mouse.sh"
 source "$SCRIPT_DIR/steps/balena-etcher.sh"
 source "$SCRIPT_DIR/steps/immich-go.sh"
 source "$SCRIPT_DIR/steps/localsend.sh"
+source "$SCRIPT_DIR/steps/scrcpy-gui.sh"
 source "$SCRIPT_DIR/steps/app-manager.sh"
 source "$SCRIPT_DIR/steps/wattage.sh"
 source "$SCRIPT_DIR/steps/winboat.sh"
@@ -139,6 +140,7 @@ run_setup_steps() {
     run_step install   "balenaEtcher"        install_balena_etcher
     run_step install   "immich-go"           install_immich_go
     run_step install   "LocalSend"           install_localsend
+    run_step install   "Scrcpy GUI"          install_scrcpy_gui
     run_step install   "AppManager"          install_app_manager
     run_step install   "Wattage"             install_wattage
     run_step install   "WinBoat"             install_winboat

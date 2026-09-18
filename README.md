@@ -86,6 +86,9 @@ actions:
   [LocalSend](https://localsend.org/) `.deb` release (not the Snap Store
   version — its AppArmor sandboxing breaks NetworkManager access and the
   system tray icon).
+- On AMD64 systems, installs the latest [Scrcpy GUI](https://github.com/SimonAKing/scrcpy-gui)
+  `.deb` release. Its official SHA-256 manifest is verified before installation;
+  the package bundles compatible `scrcpy` and `adb` binaries.
 - On AMD64 and ARM64 systems, installs
   [AppManager](https://github.com/kem-a/AppManager) and uses it to install the
   [Wattage](https://github.com/v81d/wattage) nightly AppImage from
@@ -184,6 +187,8 @@ variable in `config.sh`. The clone location remains
   downloading Anthropic's latest x64 `.deb` installer and installing it with
   APT. The installer registers Anthropic's APT repository so Claude Desktop
   updates with the rest of the system packages.
+- Installs the latest Scrcpy GUI AMD64 `.deb` release after validating it
+  against the upstream `SHA256SUMS.txt` manifest.
 
 Installer and release source URLs, including the WinBoat AppImage URL, can also
 be overridden in `config.sh`. See `config.sh.example` for the full list.
@@ -364,6 +369,9 @@ repository. Its data backup and restore chain lives in
 - LocalSend is installed only on AMD64 and ARM64 systems, from its official
   `.deb` release rather than the Snap Store, and any existing Snap install is
   removed first.
+- Scrcpy GUI is installed only on AMD64 systems from its official `.deb` release.
+  The release bundle includes `scrcpy` and `adb`; enable USB debugging on an
+  Android device before connecting it.
 - AppManager and Wattage are installed only on AMD64 and ARM64 systems. WinBoat
   is installed only on AMD64 systems. If a configured AppImage or nightly
   artifact is temporarily unavailable, the script reports that in the summary
