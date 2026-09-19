@@ -28,6 +28,10 @@ install the OS itself, only what runs on top of it.
   and WinBoat (a Windows-app compatibility layer) are the heaviest
   consumers of RAM/disk if you actually use them — a machine that skips
   those can get by with less than the "comfortable" numbers above.
+- The [local image models](#local-image-generation-and-editing-comfyui)
+  are the heaviest download of all: ComfyUI plus the default model set
+  is about 30 GB on disk and needs an NVIDIA GPU. The step is skipped
+  unless `COMFYUI_DIR` is set in `config.sh`.
 - The [local AI agent](#local-ai-agent-goose) is the other heavy piece:
   its default model is an ~18 GB download and needs about 24 GB of RAM
   (GPU memory counts toward it). On smaller machines the model step is
@@ -268,6 +272,57 @@ shell, web search and simple browser tasks, weak at complex websites.
 Content-Security-Policy (GitHub, Gmail), and a small model may guess
 instead of saying it could not read something, so check its facts.
 
+### Local Image Generation and Editing (ComfyUI)
+
+A free, offline alternative to paid image APIs (Nano Banana, GPT Image):
+[ComfyUI](https://github.com/comfyanonymous/ComfyUI) serving open-weight
+image models on this machine, with no accounts, credits or limits. The
+whole step is **skipped unless `COMFYUI_DIR` is set** in `config.sh`,
+because the models are tens of GB.
+
+- Installs ComfyUI in `COMFYUI_DIR` with its own Python virtual
+  environment and PyTorch built for CUDA
+  (`COMFYUI_TORCH_INDEX_URL`, CUDA 12.8 by default). AMD64 only; needs
+  an NVIDIA GPU with the proprietary driver (Driver Manager).
+- Adds the [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) custom
+  node, which loads quantized models: a 20B editing model then runs on a
+  6 GB card, keeping the rest of its weights in RAM.
+- Downloads the model sets named in `COMFYUI_MODEL_SETS` (see
+  `steps/comfyui/models.tsv`), each file verified against the SHA-256
+  Hugging Face publishes for it and marked as verified so later runs do
+  not re-hash it. An interrupted download resumes on the next run.
+
+  | Set | Models | Size | Good at |
+  | --- | --- | --- | --- |
+  | `qwen` (default) | Qwen-Image-Edit-2511 (4-bit GGUF) + Qwen2.5-VL text encoder, VAE and the 4-step Lightning LoRA | ~22 GB | Best quality: instruction edits that keep characters and text consistent. ~100 s per 1 MP image on a 6 GB GPU |
+  | `klein` | FLUX.2 klein 4B (fp8) + Qwen3-4B text encoder and VAE | ~12 GB | Three times faster (~35 s), lower quality on detailed art |
+
+  Both are Apache 2.0, so they can be used commercially.
+- Writes a `comfyui` **systemd user service** on
+  `127.0.0.1:COMFYUI_PORT` (8188 by default). It is deliberately **not
+  enabled at boot**: it holds GPU memory while it runs.
+
+```bash
+systemctl --user start comfyui     # then open http://127.0.0.1:8188
+systemctl --user stop comfyui      # frees the GPU and the RAM
+```
+
+In the web interface, open a workflow from **Templates** (for example
+"Qwen Image Edit"), pick the installed model files in the loader nodes,
+load an image, write the instruction and run. Results are saved in
+`COMFYUI_DIR/output`.
+
+Scripts can also drive it through its HTTP API, and start the service
+themselves. That is what
+[comic-skills](https://github.com/diegochagas/comic-skills) does to
+erase text from comic pages without paying for an image API:
+
+```bash
+INPAINT=qwen COMFYUI_SERVICE=comfyui \
+  ~/Projects/comic-skills/venv/bin/python \
+  ~/Projects/comic-skills/clean-texts/scripts/clean_texts.py "<folder>" --backend local
+```
+
 ### Desktop Configuration
 
 The script creates these Cinnamon keyboard shortcuts:
@@ -333,6 +388,8 @@ steps/              One setup step (install_* or configure_*) per file
   <name>/<name>.sh  A step that ships files, kept in the same folder:
   antimicrox/       antimicrox.sh and the profiles/ it copies
   fonts/            fonts.sh and the fonts/ it installs
+  comfyui/          comfyui.sh and models.tsv (the model list it
+                    downloads and verifies)
   goose/            goose.sh, goose-config.py (merges Goose's
                     config.yaml) and the goosehints it installs
   xcompose/         xcompose.sh and the XCompose rules it merges

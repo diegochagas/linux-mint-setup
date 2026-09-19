@@ -47,6 +47,9 @@ DISCORD_DEB_URL="https://discord.com/api/download?platform=linux&format=deb"
 OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
 GOOSE_CLI_INSTALL_URL="https://github.com/block/goose/releases/download/stable/download_cli.sh"
 GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest"
+COMFYUI_REPO="https://github.com/comfyanonymous/ComfyUI.git"
+COMFYUI_GGUF_NODE_REPO="https://github.com/city96/ComfyUI-GGUF.git"
+COMFYUI_TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 
 #
 # Ollama models directory
@@ -82,6 +85,37 @@ GOOSE_OLLAMA_CONTEXT="32768"
 # Leave empty to skip the SearXNG extension.
 #
 GOOSE_SEARXNG_URL=""
+
+#
+# ComfyUI, local image generation and editing
+#
+# COMFYUI_DIR is where ComfyUI, its Python environment and
+# its models are installed, e.g. a directory on a larger
+# data disk: the models are tens of GB and the step wants
+# about 45 GB free. Needs an NVIDIA GPU with its driver
+# installed (a 6 GB card is enough; what does not fit is
+# kept in RAM).
+#
+# Leave empty to skip ComfyUI entirely.
+#
+COMFYUI_DIR=""
+
+#
+# Which model sets to download, comma separated (see
+# steps/comfyui/models.tsv):
+#
+#   qwen  - Qwen-Image-Edit-2511, ~22 GB. Best quality;
+#           what comic-skills uses to erase text over art.
+#   klein - FLUX.2 klein 4B, ~12 GB. Faster, lower quality.
+#
+# Leave empty to install ComfyUI without any model.
+#
+COMFYUI_MODEL_SETS="qwen"
+
+#
+# Port the ComfyUI user service listens on (127.0.0.1 only).
+#
+COMFYUI_PORT="8188"
 
 #
 # RPG Maker library

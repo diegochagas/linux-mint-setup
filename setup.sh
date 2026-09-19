@@ -70,6 +70,7 @@ source "$SCRIPT_DIR/steps/claude-desktop.sh"
 source "$SCRIPT_DIR/steps/discord.sh"
 source "$SCRIPT_DIR/steps/ollama.sh"
 source "$SCRIPT_DIR/steps/goose/goose.sh"
+source "$SCRIPT_DIR/steps/comfyui/comfyui.sh"
 source "$SCRIPT_DIR/steps/hypnotix.sh"
 source "$SCRIPT_DIR/steps/keyboard-shortcuts.sh"
 source "$SCRIPT_DIR/steps/xcompose/xcompose.sh"
@@ -163,6 +164,10 @@ run_setup_steps() {
     run_step install   "Goose Desktop"       install_goose_desktop
     run_step configure "Goose Local Model"   configure_goose_model
     run_step configure "Goose"               configure_goose
+    run_step install   "ComfyUI"             install_comfyui
+    run_step install   "ComfyUI GGUF Node"   install_comfyui_gguf_node
+    run_step configure "ComfyUI Models"      configure_comfyui_models
+    run_step configure "ComfyUI Service"     configure_comfyui_service
     run_step install   "Hypnotix"            install_hypnotix
     run_step configure "Keyboard Shortcuts"  configure_keyboard_shortcuts
     run_step configure "XCompose"            configure_xcompose
