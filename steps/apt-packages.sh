@@ -37,6 +37,7 @@ APT_PACKAGES=(
     nodejs
     npm
     python3
+    python3-yaml
     rsync
     shellcheck
     sublime-text

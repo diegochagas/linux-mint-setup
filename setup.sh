@@ -66,6 +66,8 @@ source "$SCRIPT_DIR/steps/gimp-ecosystem.sh"
 source "$SCRIPT_DIR/steps/tailscale.sh"
 source "$SCRIPT_DIR/steps/claude-code.sh"
 source "$SCRIPT_DIR/steps/claude-desktop.sh"
+source "$SCRIPT_DIR/steps/ollama.sh"
+source "$SCRIPT_DIR/steps/goose/goose.sh"
 source "$SCRIPT_DIR/steps/hypnotix.sh"
 source "$SCRIPT_DIR/steps/keyboard-shortcuts.sh"
 source "$SCRIPT_DIR/steps/xcompose/xcompose.sh"
@@ -151,6 +153,12 @@ run_setup_steps() {
     run_step install   "Tailscale"           install_tailscale
     run_step install   "Claude Code"         install_claude_code
     run_step install   "Claude Desktop"      install_claude_desktop
+    run_step install   "Ollama"              install_ollama
+    run_step configure "Ollama Models Dir"   configure_ollama
+    run_step install   "Goose CLI"           install_goose_cli
+    run_step install   "Goose Desktop"       install_goose_desktop
+    run_step configure "Goose Local Model"   configure_goose_model
+    run_step configure "Goose"               configure_goose
     run_step install   "Hypnotix"            install_hypnotix
     run_step configure "Keyboard Shortcuts"  configure_keyboard_shortcuts
     run_step configure "XCompose"            configure_xcompose

@@ -47,6 +47,23 @@ github_release_asset_url() {
             'first(.assets[] | select(.name | endswith($suffix)) | .browser_download_url) // empty'
 }
 
+# Prints the SHA-256 checksum GitHub records for the first
+# asset in a repository's latest release whose name ends
+# with the given suffix. Prints nothing when there is none.
+#
+# Arguments:
+#   $1 - Releases API URL (.../releases/latest)
+#   $2 - Asset name suffix
+github_release_asset_sha256() {
+    local api_url="$1"
+    local suffix="$2"
+
+    curl -fsSL "$api_url" |
+        jq -r --arg suffix "$suffix" \
+            'first(.assets[] | select(.name | endswith($suffix)) | .digest) // empty' |
+        sed -n 's/^sha256://p'
+}
+
 # Downloads a .deb package and installs it with APT.
 #
 # Arguments:

@@ -42,6 +42,44 @@ WINBOAT_APPIMAGE_URL="https://github.com/TibixDev/winboat/releases/download/v0.9
 TAILSCALE_INSTALL_URL="https://tailscale.com/install.sh"
 CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
+OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
+GOOSE_CLI_INSTALL_URL="https://github.com/block/goose/releases/download/stable/download_cli.sh"
+GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest"
+
+#
+# Ollama models directory
+#
+# Where Ollama stores its models (tens of GB), e.g. a
+# directory on a larger data disk. It is created and
+# owned by the ollama service user.
+#
+# Leave empty to use Ollama's default location.
+#
+OLLAMA_MODELS_DIR=""
+
+#
+# Goose local model
+#
+# GOOSE_OLLAMA_BASE_MODEL is pulled from the Ollama
+# library and copied as GOOSE_OLLAMA_MODEL with a
+# GOOSE_OLLAMA_CONTEXT-token context, which Goose uses.
+# The default base model needs about 24 GB of RAM (GPU
+# memory counts toward it); on smaller machines use e.g.
+# qwen3:8b with a 16384 context.
+#
+GOOSE_OLLAMA_BASE_MODEL="qwen3:30b-a3b-instruct-2507-q4_K_M"
+GOOSE_OLLAMA_MODEL="qwen3-instruct-32k"
+GOOSE_OLLAMA_CONTEXT="32768"
+
+#
+# SearXNG instance for Goose web search
+#
+# Base URL of a SearXNG instance with the JSON output
+# format enabled, used by Goose's SearXNG extension.
+#
+# Leave empty to skip the SearXNG extension.
+#
+GOOSE_SEARXNG_URL=""
 
 #
 # RPG Maker library

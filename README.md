@@ -28,6 +28,10 @@ install the OS itself, only what runs on top of it.
   and WinBoat (a Windows-app compatibility layer) are the heaviest
   consumers of RAM/disk if you actually use them — a machine that skips
   those can get by with less than the "comfortable" numbers above.
+- The [local AI agent](#local-ai-agent-goose) is the other heavy piece:
+  its default model is an ~18 GB download and needs about 24 GB of RAM
+  (GPU memory counts toward it). On smaller machines the model step is
+  skipped with a warning; pick a smaller model in `config.sh`.
 
 ## Step 1 - Run the Automated Setup Script
 
@@ -60,6 +64,13 @@ writes a log to the `logs/` folder.
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
 Weekly - Keep 4 > Next > Next > Finish`.
 2. Open a new terminal and run `claude` once to sign in to Claude Code.
+3. For Goose's Browser extension, install the Open Browser Control add-on
+   in the browser Goose should control:
+   [Firefox](https://addons.mozilla.org/firefox/addon/open-browser-control/)
+   or [Chrome](https://chromewebstore.google.com/detail/open-browser-control/icicfjcgocaakibmmaejmoipckofnnpl).
+4. Optional: to let Goose read email, add an IMAP account with
+   `npx -p imap-mcp-server imap-setup`, then turn on the IMAP Email
+   extension in Goose when you need it (see [Local AI Agent](#local-ai-agent-goose)).
 
 ## What `setup.sh` Does
 
@@ -71,7 +82,7 @@ actions:
 - Removes Linux Mint's Snap restriction by renaming `nosnap.pref`, when present.
 - Adds the official Sublime Text APT repository.
 - Updates APT and installs:
-  Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, curl, jq, AntiMicroX,
+  Firefox, ExifTool, VLC, Sublime Text, Git, Node.js, npm, Python 3, PyYAML, curl, jq, AntiMicroX,
   unrar, unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
   Nextcloud Desktop, FFmpeg, fontconfig, GParted, Tree, ShellCheck, Docker,
   Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, the TimGM6mb
@@ -195,6 +206,55 @@ variable in `config.sh`. The clone location remains
 Installer and release source URLs, including the WinBoat AppImage URL, can also
 be overridden in `config.sh`. See `config.sh.example` for the full list.
 
+### Local AI Agent (Goose)
+
+A free, open-source alternative to Claude Cowork that runs entirely on
+this machine: [Goose](https://github.com/block/goose) as the agent and
+[Ollama](https://ollama.com/) serving a local model.
+
+- Installs Ollama with its official script (AMD64 and ARM64). It uses an
+  NVIDIA GPU when the proprietary driver is installed (Driver Manager);
+  a model larger than the GPU memory is split between GPU and CPU/RAM
+  automatically. `OLLAMA_MODELS_DIR` in `config.sh` moves the model
+  storage to another disk, through its own systemd drop-in
+  (`ollama.service.d/linux-mint-setup.conf`).
+- Installs the Goose CLI in `~/.local/bin` with Block's installer
+  (AMD64 and ARM64) and, on AMD64, Goose Desktop from its latest `.deb`
+  release after checking the SHA-256 GitHub records for it.
+- Pulls the local model (`GOOSE_OLLAMA_BASE_MODEL`, by default
+  Qwen3-30B-A3B-Instruct-2507, ~18 GB) and creates a copy named
+  `GOOSE_OLLAMA_MODEL` with a 32k-token context. Ollama's default 4096
+  tokens is too small: Goose's own instructions and tool descriptions
+  take most of it.
+- Writes Goose's `~/.config/goose/config.yaml`, keeping any existing
+  settings (a previous version is saved as `config.yaml.bak`):
+  - Ollama as the provider, with the model above.
+  - Smart approval mode and a 50-turn limit, only when not set yet, so
+    choices made later in Goose Desktop are kept. The limit stops a
+    stuck task instead of letting it loop.
+  - Extensions, each added only when missing:
+
+    | Extension | What it does |
+    | --- | --- |
+    | Developer | Built in: runs shell commands and reads/edits files |
+    | Browser | [Open Browser Control](https://www.npmjs.com/package/open-browser-control): controls your real Firefox or Chrome through its add-on ([manual step](#step-2---manual-post-install-steps)) |
+    | SearXNG Search | [mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng): web search through the SearXNG instance set in `GOOSE_SEARXNG_URL`; skipped when empty |
+    | IMAP Email | [imap-mcp-server](https://www.npmjs.com/package/imap-mcp-server): reads and manages email. Added **disabled**: its 40 tools use a large part of a local model's context, so turn it on only for email tasks |
+
+- Installs `steps/goose/goosehints` as `~/.config/goose/.goosehints`,
+  rules Goose reads at the start of every session: report only facts
+  it actually read, use the GitHub API instead of GitHub pages, read
+  web pages with small `browser_execute_js` snippets instead of the
+  whole DOM, and use `python3`.
+
+Run `goose session` in a folder for the terminal version or open Goose
+from the menu for the desktop app. What to expect from the default
+model on a laptop with a 6 GB GPU: about 20 tokens/s, good at file,
+shell, web search and simple browser tasks, weak at complex websites.
+`browser_execute_js` is blocked on sites with a strict
+Content-Security-Policy (GitHub, Gmail), and a small model may guess
+instead of saying it could not read something, so check its facts.
+
 ### Desktop Configuration
 
 The script creates these Cinnamon keyboard shortcuts:
@@ -260,6 +320,8 @@ steps/              One setup step (install_* or configure_*) per file
   <name>/<name>.sh  A step that ships files, kept in the same folder:
   antimicrox/       antimicrox.sh and the profiles/ it copies
   fonts/            fonts.sh and the fonts/ it installs
+  goose/            goose.sh, goose-config.py (merges Goose's
+                    config.yaml) and the goosehints it installs
   xcompose/         xcompose.sh and the XCompose rules it merges
 ```
 
@@ -385,6 +447,10 @@ repository. Its data backup and restore chain lives in
 - Claude Code is installed with Anthropic's terminal installer. Run `claude`
   once after setup to sign in.
 - Claude Desktop is installed only on AMD64 systems.
+- Goose Desktop is installed only on AMD64 systems; Ollama and the Goose
+  CLI on AMD64 and ARM64. The Goose Desktop package adds
+  `/usr/bin/goose` as a link to the desktop app, so the setup keeps
+  `~/.local/bin` first on the `PATH` and `goose` still runs the CLI.
 - Hypnotix is installed from APT when missing. Its `IPTV-ORG` provider uses the
   public Brazilian playlist maintained by IPTV-ORG.
 - Homelab Backup is cloned to `~/Projects/homelab-backup` and scheduled with a

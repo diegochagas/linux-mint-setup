@@ -1,0 +1,29 @@
+# Global hints for Goose (read at the start of every session).
+# Installed by linux-mint-setup; edit steps/goose/goosehints there.
+
+## Research and facts
+- Only report facts you actually read in a tool result. If a page did not load or was cut off, say so; never guess or explain it away (e.g. "GitHub is having issues").
+- Do not describe download files, assets or build artifacts as new features.
+- Cite the URL each fact came from.
+
+## GitHub
+- For releases, issues, PRs and repo info, prefer the JSON API over HTML pages, which load via JavaScript and come back incomplete:
+  - latest release: https://api.github.com/repos/OWNER/REPO/releases/latest
+  - a given tag:    https://api.github.com/repos/OWNER/REPO/releases/tags/TAG
+  - recent releases: https://api.github.com/repos/OWNER/REPO/releases?per_page=5
+- The release "body" field is the changelog; "published_at" is the release time (UTC).
+
+## Browser (open-browser-control, the user's real Firefox or Chrome)
+- Your context is only 32k tokens. NEVER call browser_get_dom with simplified: false, and avoid browser_get_dom on big pages (GitHub, news sites): it overflows the context.
+- To read a page, use browser_execute_js and return only what you need, capped in size, e.g.:
+  - headings: `[...document.querySelectorAll('h1,h2,h3')].slice(0,15).map(e=>e.innerText.trim()).join('\n')`
+  - main text: `(document.querySelector('main')||document.body).innerText.slice(0,4000)`
+  - links: `[...document.querySelectorAll('a')].slice(0,30).map(a=>a.innerText.trim()+' -> '+a.href).join('\n')`
+- browser_execute_js returns null on sites with a strict Content-Security-Policy (GitHub, Gmail, many big sites) — it is blocked, not "still loading". If it returns null twice, stop using the browser for that page and use Web Url Read or an API URL instead.
+- If you only need facts from a public page (no login needed), prefer the Web Url Read tool or an API URL instead of the browser.
+- When a tool result is saved to a /tmp/goose_mcp_response_*.txt file, it is text, not an image: search it with `grep -m 20 -i -F 'word' FILE` or `python3`, never read it whole.
+
+## Shell
+- This machine has `python3`, not `python`.
+- Check each command's output before the next step; if it failed, fix it and retry.
+- Batch simple file operations (one `mv a b c dir/` instead of one command per file).
