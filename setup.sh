@@ -56,6 +56,7 @@ source "$SCRIPT_DIR/steps/remote-mouse.sh"
 source "$SCRIPT_DIR/steps/balena-etcher.sh"
 source "$SCRIPT_DIR/steps/immich-go.sh"
 source "$SCRIPT_DIR/steps/localsend.sh"
+source "$SCRIPT_DIR/steps/zapfast.sh"
 source "$SCRIPT_DIR/steps/scrcpy-gui.sh"
 source "$SCRIPT_DIR/steps/app-manager.sh"
 source "$SCRIPT_DIR/steps/wattage.sh"
@@ -66,6 +67,7 @@ source "$SCRIPT_DIR/steps/gimp-ecosystem.sh"
 source "$SCRIPT_DIR/steps/tailscale.sh"
 source "$SCRIPT_DIR/steps/claude-code.sh"
 source "$SCRIPT_DIR/steps/claude-desktop.sh"
+source "$SCRIPT_DIR/steps/discord.sh"
 source "$SCRIPT_DIR/steps/ollama.sh"
 source "$SCRIPT_DIR/steps/goose/goose.sh"
 source "$SCRIPT_DIR/steps/hypnotix.sh"
@@ -143,6 +145,7 @@ run_setup_steps() {
     run_step install   "balenaEtcher"        install_balena_etcher
     run_step install   "immich-go"           install_immich_go
     run_step install   "LocalSend"           install_localsend
+    run_step install   "ZapFast"             install_zapfast
     run_step install   "Scrcpy GUI"          install_scrcpy_gui
     run_step install   "AppManager"          install_app_manager
     run_step install   "Wattage"             install_wattage
@@ -153,6 +156,7 @@ run_setup_steps() {
     run_step install   "Tailscale"           install_tailscale
     run_step install   "Claude Code"         install_claude_code
     run_step install   "Claude Desktop"      install_claude_desktop
+    run_step install   "Discord"             install_discord
     run_step install   "Ollama"              install_ollama
     run_step configure "Ollama Models Dir"   configure_ollama
     run_step install   "Goose CLI"           install_goose_cli

@@ -91,12 +91,17 @@ actions:
   `docker` group, fixing existing `~/.docker` ownership if needed, and enabling
   and starting the Docker and containerd systemd services. Log out and back in
   before using Docker without `sudo`.
-- On AMD64 systems, installs Remote Mouse and the latest balenaEtcher release.
+- On AMD64 systems, installs Remote Mouse with its bundled green taskbar icon,
+  and the latest balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
 - On AMD64 and ARM64 systems, installs the latest
   [LocalSend](https://localsend.org/) `.deb` release (not the Snap Store
   version — its AppArmor sandboxing breaks NetworkManager access and the
   system tray icon).
+- On AMD64 and ARM64 systems, installs the latest
+  [ZapFast](https://zapfast.rocks/) release as a user-local WhatsApp client.
+  Its launcher uses the bundled SVG by absolute path so Cinnamon displays the
+  ZapFast icon even before its user icon-theme cache is registered.
 - On AMD64 systems, installs the latest [Scrcpy GUI](https://github.com/SimonAKing/scrcpy-gui)
   `.deb` release. Its official SHA-256 manifest is verified before installation;
   the package bundles compatible `scrcpy` and `adb` binaries.
@@ -110,6 +115,8 @@ actions:
   terminal use.
 - On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
   installer.
+- On AMD64 systems, installs Discord from Discord's official Linux `.deb`
+  download.
 - Installs [Hypnotix](https://github.com/linuxmint/hypnotix) from APT when it
   is not already available, then adds the IPTV-ORG Brazil M3U provider.
 
@@ -191,6 +198,10 @@ variable in `config.sh`. The clone location remains
   `app-manager install`.
 - Installs [WinBoat](https://winboat.app/) on AMD64 systems by downloading the
   configured AppImage release and installing it with `app-manager install`.
+- Installs [ZapFast](https://zapfast.rocks/) from its latest GitHub Linux
+  release into `~/.local/lib/zapfast`, makes it available as
+  `~/.local/bin/zapfast`, and creates a Cinnamon-compatible launcher with its
+  bundled SVG icon.
 - Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) using
   Anthropic's Linux terminal installer:
   ```bash
@@ -200,6 +211,8 @@ variable in `config.sh`. The clone location remains
   downloading Anthropic's latest x64 `.deb` installer and installing it with
   APT. The installer registers Anthropic's APT repository so Claude Desktop
   updates with the rest of the system packages.
+- Installs [Discord](https://discord.com/download) on AMD64 systems from its
+  official `.deb` download.
 - Installs the latest Scrcpy GUI AMD64 `.deb` release after validating it
   against the upstream `SHA256SUMS.txt` manifest.
 

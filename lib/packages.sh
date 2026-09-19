@@ -5,7 +5,7 @@
 #
 
 is_apt_installed() {
-    dpkg -s "$1" > /dev/null 2>&1
+    [[ "$(dpkg-query -W -f='${db:Status-Status}' "$1" 2> /dev/null)" == "installed" ]]
 }
 
 is_snap_installed() {
@@ -77,5 +77,9 @@ install_deb_package() {
     package="$(make_work_dir "$name")/$name.deb"
 
     download_file "$url" "$package"
+    # Let APT's unprivileged _apt downloader read the local package instead of
+    # falling back to an unsandboxed root download.
+    run chmod 755 "$(dirname "$package")"
+    run chmod 644 "$package"
     run sudo apt install -y "$package"
 }

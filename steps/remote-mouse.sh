@@ -28,7 +28,8 @@ install_remote_mouse() {
 Type=Application
 Name=Remote Mouse
 Exec=RemoteMouse
-Icon=input-mouse
+Path=/opt/remotemouse
+Icon=/opt/remotemouse/images/icon_linux_taskbar_green@3x.png
 Terminal=false
 Categories=Utility;Network;
 EOF
