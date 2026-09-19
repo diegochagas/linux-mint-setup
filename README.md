@@ -99,6 +99,8 @@ actions:
   terminal use.
 - On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
   installer.
+- Installs [Hypnotix](https://github.com/linuxmint/hypnotix) from APT when it
+  is not already available, then adds the IPTV-ORG Brazil M3U provider.
 
 ### Snap Applications
 
@@ -233,6 +235,10 @@ It also:
 - Allows unverified Flatpak applications to appear in Software Manager.
 - Enables automatic update checks and updates in Update Manager.
 - Configures the Homelab Backup systemd user timer after the other setup steps.
+- Configures Hypnotix with the `IPTV-ORG` M3U URL provider using the Brazilian
+  playlist at `https://iptv-org.github.io/iptv/countries/br.m3u`. Existing
+  providers are retained, and a prior `IPTV-ORG` entry is updated rather than
+  duplicated.
 
 ## Project Layout
 
@@ -379,6 +385,8 @@ repository. Its data backup and restore chain lives in
 - Claude Code is installed with Anthropic's terminal installer. Run `claude`
   once after setup to sign in.
 - Claude Desktop is installed only on AMD64 systems.
+- Hypnotix is installed from APT when missing. Its `IPTV-ORG` provider uses the
+  public Brazilian playlist maintained by IPTV-ORG.
 - Homelab Backup is cloned to `~/Projects/homelab-backup` and scheduled with a
   user systemd timer.
 - Some operations may already be complete when the script is run again. Review

@@ -66,6 +66,7 @@ source "$SCRIPT_DIR/steps/gimp-ecosystem.sh"
 source "$SCRIPT_DIR/steps/tailscale.sh"
 source "$SCRIPT_DIR/steps/claude-code.sh"
 source "$SCRIPT_DIR/steps/claude-desktop.sh"
+source "$SCRIPT_DIR/steps/hypnotix.sh"
 source "$SCRIPT_DIR/steps/keyboard-shortcuts.sh"
 source "$SCRIPT_DIR/steps/xcompose/xcompose.sh"
 source "$SCRIPT_DIR/steps/copyq.sh"
@@ -150,6 +151,7 @@ run_setup_steps() {
     run_step install   "Tailscale"           install_tailscale
     run_step install   "Claude Code"         install_claude_code
     run_step install   "Claude Desktop"      install_claude_desktop
+    run_step install   "Hypnotix"            install_hypnotix
     run_step configure "Keyboard Shortcuts"  configure_keyboard_shortcuts
     run_step configure "XCompose"            configure_xcompose
     run_step configure "CopyQ"               configure_copyq
@@ -158,6 +160,7 @@ run_setup_steps() {
     run_step configure "AntiMicroX Profiles" configure_antimicrox
     run_step configure "EasyRPG Player"      configure_easyrpg
     run_step configure "Update Manager"      configure_update_manager
+    run_step configure "Hypnotix IPTV-ORG"   configure_hypnotix_provider
     run_step configure "Homelab Backup"      configure_homelab_backup
 }
 
