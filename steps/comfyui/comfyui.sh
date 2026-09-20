@@ -26,7 +26,7 @@
 : "${COMFYUI_REPO:=https://github.com/comfyanonymous/ComfyUI.git}"
 : "${COMFYUI_GGUF_NODE_REPO:=https://github.com/city96/ComfyUI-GGUF.git}"
 : "${COMFYUI_TORCH_INDEX_URL:=https://download.pytorch.org/whl/cu128}"
-: "${COMFYUI_MODEL_SETS:=qwen}"
+: "${COMFYUI_MODEL_SETS:=qwen,klein}"
 : "${COMFYUI_PORT:=8188}"
 
 readonly COMFYUI_STEP_DIR="${BASH_SOURCE[0]%/*}"

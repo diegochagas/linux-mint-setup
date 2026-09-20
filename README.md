@@ -29,8 +29,8 @@ install the OS itself, only what runs on top of it.
   consumers of RAM/disk if you actually use them — a machine that skips
   those can get by with less than the "comfortable" numbers above.
 - The [local image models](#local-image-generation-and-editing-comfyui)
-  are the heaviest download of all: ComfyUI plus the default model set
-  is about 30 GB on disk and needs an NVIDIA GPU. The step is skipped
+  are the heaviest download of all: ComfyUI plus the default model sets
+  is about 42 GB on disk and needs an NVIDIA GPU. The step is skipped
   unless `COMFYUI_DIR` is set in `config.sh`.
 - The [local AI agent](#local-ai-agent-goose) is the other heavy piece:
   its default model is an ~18 GB download and needs about 24 GB of RAM
@@ -161,7 +161,10 @@ installs and configures with a single command the features listed in [gimp-setup
 
 The repository to clone can be overridden with the `GIMP_SETUP_REPO` variable
 in `config.sh`, and the `GEMINI_API_KEY` / `OPENAI_API_KEY` values set there
-are forwarded to the GIMP setup for its AI plug-ins. See the
+are forwarded to the GIMP setup for its AI plug-ins — as is the address of
+the [ComfyUI](#local-image-generation-and-editing-comfyui) this setup
+installs (when `COMFYUI_DIR` is set), which their fully local backends
+use. See the
 [gimp-setup README](https://github.com/diegochagas/gimp-setup#readme) for
 details, configuration and how to add new GIMP features.
 
@@ -294,10 +297,12 @@ because the models are tens of GB.
 
   | Set | Models | Size | Good at |
   | --- | --- | --- | --- |
-  | `qwen` (default) | Qwen-Image-Edit-2511 (4-bit GGUF) + Qwen2.5-VL text encoder, VAE and the 4-step Lightning LoRA | ~22 GB | Best quality: instruction edits that keep characters and text consistent. ~100 s per 1 MP image on a 6 GB GPU |
-  | `klein` | FLUX.2 klein 4B (fp8) + Qwen3-4B text encoder and VAE | ~12 GB | Three times faster (~35 s), lower quality on detailed art |
+  | `qwen` | Qwen-Image-Edit-2511 (4-bit GGUF) + Qwen2.5-VL text encoder, VAE and the 4-step Lightning LoRA | ~22 GB | Best quality: instruction edits that keep characters and text consistent. ~100 s per 1 MP image on a 6 GB GPU |
+  | `klein` | FLUX.2 klein 4B (fp8) + Qwen3-4B text encoder and VAE | ~12 GB | Three times faster (~35 s), lower quality on detailed art. The only one that also generates images from text |
 
-  Both are Apache 2.0, so they can be used commercially.
+  Both are installed by default (`COMFYUI_MODEL_SETS="qwen,klein"`, about
+  34 GB of models plus 8 GB for ComfyUI and PyTorch); name only one to
+  save disk. Both are Apache 2.0, so they can be used commercially.
 - Writes a `comfyui` **systemd user service** on
   `127.0.0.1:COMFYUI_PORT` (8188 by default). It is deliberately **not
   enabled at boot**: it holds GPU memory while it runs.
@@ -305,7 +310,20 @@ because the models are tens of GB.
 ```bash
 systemctl --user start comfyui     # then open http://127.0.0.1:8188
 systemctl --user stop comfyui      # frees the GPU and the RAM
+systemctl --user status comfyui    # is it running?
 ```
+
+Start it before using anything that depends on it, and stop it when you
+are done: a loaded model keeps several GB of GPU memory and up to ~23 GB
+of RAM (Qwen) until the service stops.
+
+**GIMP uses it too.** The AI tools installed by the
+[GIMP ecosystem](#gimp-ecosystem) step — *Filters → AI → Remove
+Selection (AI)* and *Generative Fill* — have fully local **ComfyUI**
+backends for both model sets, so objects and text can be removed and
+selections filled from a prompt without any cloud service or API key.
+Start the service, then pick a *ComfyUI* backend/provider in GIMP; see
+[gimp-setup → Fully local AI](https://github.com/diegochagas/gimp-setup/blob/main/docs/AI_PLUGINS.md#fully-local-ai-comfyui).
 
 In the web interface, open a workflow from **Templates** (for example
 "Qwen Image Edit"), pick the installed model files in the loader nodes,

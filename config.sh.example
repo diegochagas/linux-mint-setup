@@ -106,11 +106,15 @@ COMFYUI_DIR=""
 #
 #   qwen  - Qwen-Image-Edit-2511, ~22 GB. Best quality;
 #           what comic-skills uses to erase text over art.
-#   klein - FLUX.2 klein 4B, ~12 GB. Faster, lower quality.
+#   klein - FLUX.2 klein 4B, ~12 GB. Faster, lower quality;
+#           the only one that generates images from text,
+#           and what GIMP's local AI tools (gimp-setup) are
+#           fastest with.
 #
-# Leave empty to install ComfyUI without any model.
+# Both by default. Leave empty to install ComfyUI without
+# any model.
 #
-COMFYUI_MODEL_SETS="qwen"
+COMFYUI_MODEL_SETS="qwen,klein"
 
 #
 # Port the ComfyUI user service listens on (127.0.0.1 only).

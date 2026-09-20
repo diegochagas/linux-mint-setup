@@ -17,6 +17,7 @@
 : "${GIMP_SETUP_REPO:=https://github.com/diegochagas/gimp-setup.git}"
 : "${GEMINI_API_KEY:=}"
 : "${OPENAI_API_KEY:=}"
+: "${COMFYUI_URL:=}"
 
 install_gimp_ecosystem() {
     local setup_dir
@@ -35,8 +36,13 @@ install_gimp_ecosystem() {
         setup_args+=(--dry-run)
     fi
 
-    # The API keys are forwarded to gimp-setup for its AI plug-ins.
-    export GEMINI_API_KEY OPENAI_API_KEY
+    # The API keys are forwarded to gimp-setup for its AI plug-ins, and so
+    # is the address of the ComfyUI this setup installs (see
+    # steps/comfyui/), which their fully local backends use.
+    if [[ -z "$COMFYUI_URL" && -n "${COMFYUI_DIR:-}" ]]; then
+        COMFYUI_URL="http://127.0.0.1:${COMFYUI_PORT:-8188}"
+    fi
+    export GEMINI_API_KEY OPENAI_API_KEY COMFYUI_URL
 
     run bash "$setup_dir/setup.sh" "${setup_args[@]}"
 }
