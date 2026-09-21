@@ -140,6 +140,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - Emojify
 - Master PDF Editor
 - Kdenlive
+- OBS Studio
 - Free Download Manager
 - Dosage
 - EasyRPG Player

@@ -9,6 +9,7 @@ FLATPAK_PACKAGES=(
     xyz.riothedev.emojify
     net.code_industry.MasterPDFEditor
     org.kde.kdenlive
+    com.obsproject.Studio
     org.freedownloadmanager.Manager
     io.github.diegopvlk.Dosage
     org.easyrpg.player
