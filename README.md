@@ -97,7 +97,9 @@ actions:
   and starting the Docker and containerd systemd services. Log out and back in
   before using Docker without `sudo`.
 - On AMD64 systems, installs Remote Mouse with its bundled green taskbar icon,
-  and the latest balenaEtcher release.
+  starting it from its install directory (from the menu and at login) because
+  the tray icon is loaded relative to the working directory, and the latest
+  balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
 - On AMD64 and ARM64 systems, installs the latest
   [LocalSend](https://localsend.org/) `.deb` release (not the Snap Store

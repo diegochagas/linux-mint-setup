@@ -168,6 +168,7 @@ run_setup_steps() {
     run_step configure "XCompose"            configure_xcompose
     run_step configure "CopyQ"               configure_copyq
     run_step configure "LocalSend Autostart" configure_localsend_autostart
+    run_step configure "Remote Mouse Launchers" configure_remote_mouse_launchers
     run_step configure "Fonts"               configure_fonts
     run_step configure "AntiMicroX Profiles" configure_antimicrox
     run_step configure "EasyRPG Player"      configure_easyrpg
