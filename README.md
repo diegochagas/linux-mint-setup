@@ -28,10 +28,11 @@ install the OS itself, only what runs on top of it.
   and WinBoat (a Windows-app compatibility layer) are the heaviest
   consumers of RAM/disk if you actually use them — a machine that skips
   those can get by with less than the "comfortable" numbers above.
-- The [local image models](#local-image-generation-and-editing-comfyui)
-  are the heaviest download of all: ComfyUI plus the default model sets
-  is about 42 GB on disk and needs an NVIDIA GPU. The step is skipped
-  unless `COMFYUI_DIR` is set in `config.sh`.
+- The [local image models](https://github.com/diegochagas/gimp-setup#local-ai-models-comfyui)
+  (ComfyUI, installed by the GIMP ecosystem step) are the heaviest
+  download of all: ComfyUI plus the default model sets is about 42 GB on
+  disk and needs an NVIDIA GPU. They are skipped unless `COMFYUI_DIR` is
+  set in `config.sh`.
 - The [local AI agent](#local-ai-agent-goose) is the other heavy piece:
   its default model is an ~18 GB download and needs about 24 GB of RAM
   (GPU memory counts toward it). On smaller machines the model step is
@@ -150,22 +151,24 @@ The script installs Flatpak, adds Flathub, and installs:
 ### GIMP Ecosystem
 
 The complete GIMP ecosystem lives in its own repository:
-[gimp-setup](https://github.com/diegochagas/gimp-setup).
+[gimp-setup](https://github.com/diegochagas/gimp-setup). That includes the
+[local AI models](https://github.com/diegochagas/gimp-setup#local-ai-models-comfyui)
+(ComfyUI with FLUX.2 klein and Qwen-Image-Edit) behind GIMP's AI tools, which
+run fully on this machine with no accounts or API keys.
 
 If the GIMP Flatpak is already installed, this step is skipped entirely —
-GIMP itself is the marker for the whole ecosystem. To add missing pieces to
-an existing GIMP install, run the (idempotent) `gimp-setup/setup.sh`
-directly.
+GIMP itself is the marker for the whole ecosystem — unless `COMFYUI_DIR` is
+set and ComfyUI is not installed there yet. To add other missing pieces (or
+another model set) to an existing GIMP install, run the (idempotent)
+`gimp-setup/setup.sh` directly.
 
 Otherwise the script clones that repository and runs its `setup.sh`, which
 installs and configures with a single command the features listed in [gimp-setup/docs/](https://github.com/diegochagas/gimp-setup/tree/main/docs)
 
 The repository to clone can be overridden with the `GIMP_SETUP_REPO` variable
-in `config.sh`, and the `GEMINI_API_KEY` / `OPENAI_API_KEY` values set there
-are forwarded to the GIMP setup for its AI plug-ins — as is the address of
-the [ComfyUI](#local-image-generation-and-editing-comfyui) this setup
-installs (when `COMFYUI_DIR` is set), which their fully local backends
-use. See the
+in `config.sh`. The ComfyUI settings set there — `COMFYUI_DIR` (empty skips
+ComfyUI), `COMFYUI_MODEL_SETS` and `COMFYUI_PORT` — are forwarded to the GIMP
+setup. See the
 [gimp-setup README](https://github.com/diegochagas/gimp-setup#readme) for
 details, configuration and how to add new GIMP features.
 
@@ -276,72 +279,6 @@ shell, web search and simple browser tasks, weak at complex websites.
 Content-Security-Policy (GitHub, Gmail), and a small model may guess
 instead of saying it could not read something, so check its facts.
 
-### Local Image Generation and Editing (ComfyUI)
-
-A free, offline alternative to paid image APIs (Nano Banana, GPT Image):
-[ComfyUI](https://github.com/comfyanonymous/ComfyUI) serving open-weight
-image models on this machine, with no accounts, credits or limits. The
-whole step is **skipped unless `COMFYUI_DIR` is set** in `config.sh`,
-because the models are tens of GB.
-
-- Installs ComfyUI in `COMFYUI_DIR` with its own Python virtual
-  environment and PyTorch built for CUDA
-  (`COMFYUI_TORCH_INDEX_URL`, CUDA 12.8 by default). AMD64 only; needs
-  an NVIDIA GPU with the proprietary driver (Driver Manager).
-- Adds the [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) custom
-  node, which loads quantized models: a 20B editing model then runs on a
-  6 GB card, keeping the rest of its weights in RAM.
-- Downloads the model sets named in `COMFYUI_MODEL_SETS` (see
-  `steps/comfyui/models.tsv`), each file verified against the SHA-256
-  Hugging Face publishes for it and marked as verified so later runs do
-  not re-hash it. An interrupted download resumes on the next run.
-
-  | Set | Models | Size | Good at |
-  | --- | --- | --- | --- |
-  | `qwen` | Qwen-Image-Edit-2511 (4-bit GGUF) + Qwen2.5-VL text encoder, VAE and the 4-step Lightning LoRA | ~22 GB | Best quality: instruction edits that keep characters and text consistent. ~100 s per 1 MP image on a 6 GB GPU |
-  | `klein` | FLUX.2 klein 4B (fp8) + Qwen3-4B text encoder and VAE | ~12 GB | Three times faster (~35 s), lower quality on detailed art. The only one that also generates images from text |
-
-  Both are installed by default (`COMFYUI_MODEL_SETS="qwen,klein"`, about
-  34 GB of models plus 8 GB for ComfyUI and PyTorch); name only one to
-  save disk. Both are Apache 2.0, so they can be used commercially.
-- Writes a `comfyui` **systemd user service** on
-  `127.0.0.1:COMFYUI_PORT` (8188 by default). It is deliberately **not
-  enabled at boot**: it holds GPU memory while it runs.
-
-```bash
-systemctl --user start comfyui     # then open http://127.0.0.1:8188
-systemctl --user stop comfyui      # frees the GPU and the RAM
-systemctl --user status comfyui    # is it running?
-```
-
-Start it before using anything that depends on it, and stop it when you
-are done: a loaded model keeps several GB of GPU memory and up to ~23 GB
-of RAM (Qwen) until the service stops.
-
-**GIMP uses it too.** The AI tools installed by the
-[GIMP ecosystem](#gimp-ecosystem) step — *Filters → AI → Remove
-Selection (AI)* and *Generative Fill* — have fully local **ComfyUI**
-backends for both model sets, so objects and text can be removed and
-selections filled from a prompt without any cloud service or API key.
-Start the service, then pick a *ComfyUI* backend/provider in GIMP; see
-[gimp-setup → Fully local AI](https://github.com/diegochagas/gimp-setup/blob/main/docs/AI_PLUGINS.md#fully-local-ai-comfyui).
-
-In the web interface, open a workflow from **Templates** (for example
-"Qwen Image Edit"), pick the installed model files in the loader nodes,
-load an image, write the instruction and run. Results are saved in
-`COMFYUI_DIR/output`.
-
-Scripts can also drive it through its HTTP API, and start the service
-themselves. That is what
-[comic-skills](https://github.com/diegochagas/comic-skills) does to
-erase text from comic pages without paying for an image API:
-
-```bash
-INPAINT=qwen COMFYUI_SERVICE=comfyui \
-  ~/Projects/comic-skills/venv/bin/python \
-  ~/Projects/comic-skills/clean-texts/scripts/clean_texts.py "<folder>" --backend local
-```
-
 ### Desktop Configuration
 
 The script creates these Cinnamon keyboard shortcuts:
@@ -407,8 +344,6 @@ steps/              One setup step (install_* or configure_*) per file
   <name>/<name>.sh  A step that ships files, kept in the same folder:
   antimicrox/       antimicrox.sh and the profiles/ it copies
   fonts/            fonts.sh and the fonts/ it installs
-  comfyui/          comfyui.sh and models.tsv (the model list it
-                    downloads and verifies)
   goose/            goose.sh, goose-config.py (merges Goose's
                     config.yaml) and the goosehints it installs
   xcompose/         xcompose.sh and the XCompose rules it merges

@@ -47,9 +47,6 @@ DISCORD_DEB_URL="https://discord.com/api/download?platform=linux&format=deb"
 OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
 GOOSE_CLI_INSTALL_URL="https://github.com/block/goose/releases/download/stable/download_cli.sh"
 GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest"
-COMFYUI_REPO="https://github.com/comfyanonymous/ComfyUI.git"
-COMFYUI_GGUF_NODE_REPO="https://github.com/city96/ComfyUI-GGUF.git"
-COMFYUI_TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 
 #
 # Ollama models directory
@@ -87,29 +84,27 @@ GOOSE_OLLAMA_CONTEXT="32768"
 GOOSE_SEARXNG_URL=""
 
 #
-# ComfyUI, local image generation and editing
+# ComfyUI, the local AI models behind GIMP's AI tools
 #
-# COMFYUI_DIR is where ComfyUI, its Python environment and
-# its models are installed, e.g. a directory on a larger
-# data disk: the models are tens of GB and the step wants
-# about 45 GB free. Needs an NVIDIA GPU with its driver
-# installed (a 6 GB card is enough; what does not fit is
+# Installed by the GIMP setup (see GIMP_SETUP_REPO above), which
+# reads these three values from here. COMFYUI_DIR is where
+# ComfyUI, its Python environment and its models are installed,
+# e.g. a directory on a larger data disk: the models are tens of
+# GB and it wants about 45 GB free. Needs an NVIDIA GPU with its
+# driver installed (a 6 GB card is enough; what does not fit is
 # kept in RAM).
 #
-# Leave empty to skip ComfyUI entirely.
+# Leave COMFYUI_DIR empty to skip ComfyUI entirely.
 #
 COMFYUI_DIR=""
 
 #
-# Which model sets to download, comma separated (see
-# steps/comfyui/models.tsv):
+# Which model sets to download, comma separated:
 #
 #   qwen  - Qwen-Image-Edit-2511, ~22 GB. Best quality;
 #           what comic-skills uses to erase text over art.
 #   klein - FLUX.2 klein 4B, ~12 GB. Faster, lower quality;
-#           the only one that generates images from text,
-#           and what GIMP's local AI tools (gimp-setup) are
-#           fastest with.
+#           the only one that generates images from text.
 #
 # Both by default. Leave empty to install ComfyUI without
 # any model.
@@ -138,22 +133,3 @@ COMFYUI_PORT="8188"
 # step.
 #
 RPG_MAKER_LIBRARY_DIR=""
-
-#
-# Google Gemini API key, forwarded to the GIMP setup
-# for its AI plug-ins (Filters > AI).
-#
-# Get a free key at https://aistudio.google.com/apikey
-#
-# Leave empty to configure it later.
-#
-GEMINI_API_KEY=""
-
-#
-# OpenAI API key, forwarded to the GIMP setup for the
-# GIMP AI Plugin's OpenAI provider (paid, from
-# https://platform.openai.com/api-keys).
-#
-# Leave empty to configure it later.
-#
-OPENAI_API_KEY=""
