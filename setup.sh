@@ -64,6 +64,7 @@ source "$SCRIPT_DIR/steps/winboat.sh"
 source "$SCRIPT_DIR/steps/snap-packages.sh"
 source "$SCRIPT_DIR/steps/flatpak-packages.sh"
 source "$SCRIPT_DIR/steps/gimp-ecosystem.sh"
+source "$SCRIPT_DIR/steps/blender.sh"
 source "$SCRIPT_DIR/steps/tailscale.sh"
 source "$SCRIPT_DIR/steps/claude-code.sh"
 source "$SCRIPT_DIR/steps/claude-desktop.sh"
@@ -153,6 +154,7 @@ run_setup_steps() {
     run_step install   "Snap Packages"       install_snap_packages
     run_step install   "Flatpak Packages"    install_flatpak_packages
     run_step install   "GIMP Ecosystem"      install_gimp_ecosystem
+    run_step install   "Blender"             install_blender
     run_step install   "Tailscale"           install_tailscale
     run_step install   "Claude Code"         install_claude_code
     run_step install   "Claude Desktop"      install_claude_desktop

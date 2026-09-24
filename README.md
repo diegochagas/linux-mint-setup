@@ -101,6 +101,8 @@ actions:
   the tray icon is loaded relative to the working directory, and the latest
   balenaEtcher release.
 - On AMD64 and ARM64 systems, installs the latest `immich-go` release.
+- On AMD64 systems, installs the pinned [Blender](https://www.blender.org/) LTS
+  portable build to `/opt/blender` (linked as `/usr/local/bin/blender`).
 - On AMD64 and ARM64 systems, installs the latest
   [LocalSend](https://localsend.org/) `.deb` release (not the Snap Store
   version — its AppArmor sandboxing breaks NetworkManager access and the
@@ -205,6 +207,12 @@ variable in `config.sh`. The clone location remains
 - Installs Tailscale using its official installation script.
 - Installs [`immich-go`](https://github.com/simulot/immich-go) to
   `/usr/local/bin/immich-go` on AMD64 and ARM64 systems.
+- Installs the [Blender](https://www.blender.org/download/lts/) LTS portable
+  build pinned by `BLENDER_VERSION` / `BLENDER_TARBALL_URL` in `config.sh` to
+  `/opt/blender`, links it as `/usr/local/bin/blender` and registers its menu
+  entry. The `games-extractor` render pipeline drives it headless
+  (`blender -b --python ...`); the apt package is older and the Snap build is
+  sandboxed, which is why the official tarball is used.
 - Installs [AppManager](https://github.com/kem-a/AppManager), then downloads the
   latest successful Wattage `build-appimage.yml` artifact for the current CPU
   architecture and installs the extracted AppImage with
@@ -460,6 +468,8 @@ repository. Its data backup and restore chain lives in
 
 - Remote Mouse and balenaEtcher are installed only on AMD64 systems.
 - `immich-go` is installed only on AMD64 and ARM64 systems.
+- Blender is installed only on AMD64 systems (the official portable build has
+  no ARM64 Linux release).
 - LocalSend is installed only on AMD64 and ARM64 systems, from its official
   `.deb` release rather than the Snap Store, and any existing Snap install is
   removed first.
