@@ -24,6 +24,20 @@ GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"
 HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 
 #
+# Git config includes
+#
+# Comma-separated list of Git config files added to the
+# global configuration (include.path in ~/.gitconfig),
+# e.g. files in a folder synced by Nextcloud that hold
+# per-repository settings such as extra push URLs. A file
+# that does not exist yet is picked up by Git once it
+# appears. Use ~ for the home directory.
+#
+# Leave empty to skip the Git config includes step.
+#
+GIT_CONFIG_INCLUDES=""
+
+#
 # Installer and release URLs
 #
 # Override these if an upstream project moves its release assets,

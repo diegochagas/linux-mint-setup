@@ -202,6 +202,37 @@ The repository to clone can be overridden with the `HOMELAB_BACKUP_REPO`
 variable in `config.sh`. The clone location remains
 `~/Projects/homelab-backup`, matching the systemd unit configuration.
 
+### Git Config Includes
+
+After the Homelab Backup step, the script adds each file listed in
+`GIT_CONFIG_INCLUDES` in `config.sh` (comma separated) to the global Git
+configuration with `git config --global --add include.path`. Use it for Git
+settings that must not be committed anywhere, such as per-repository push URLs
+kept in a folder synced by Nextcloud. Because the include lives in
+`~/.gitconfig` rather than in a repository, it still applies after a project is
+deleted and cloned again.
+
+Git skips an include whose file does not exist yet, so the step can run before
+Nextcloud has finished syncing: the settings take effect once the file arrives.
+Paths already included are left alone, and an empty `GIT_CONFIG_INCLUDES` skips
+the step.
+
+A typical included file applies settings to one clone through `includeIf`:
+
+```ini
+[includeIf "gitdir:~/Projects/<repo>/"]
+	path = <folder>/<repo>.gitconfig
+```
+
+and `<repo>.gitconfig` can, for example, push to GitHub and to a copy of the
+repository on a home server:
+
+```ini
+[remote "origin"]
+	pushurl = git@github.com:<user>/<repo>.git
+	pushurl = <user>@<server>:<path-to-repo>
+```
+
 ### Other Software
 
 - Installs Tailscale using its official installation script.
@@ -329,6 +360,7 @@ It also:
 - Allows unverified Flatpak applications to appear in Software Manager.
 - Enables automatic update checks and updates in Update Manager.
 - Configures the Homelab Backup systemd user timer after the other setup steps.
+- Adds the files in `GIT_CONFIG_INCLUDES` to the global Git configuration.
 - Configures Hypnotix with the `IPTV-ORG` M3U URL provider using the Brazilian
   playlist at `https://iptv-org.github.io/iptv/countries/br.m3u`. Existing
   providers are retained, and a prior `IPTV-ORG` entry is updated rather than
