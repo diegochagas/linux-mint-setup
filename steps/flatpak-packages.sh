@@ -13,6 +13,7 @@ FLATPAK_PACKAGES=(
     org.freedownloadmanager.Manager
     io.github.diegopvlk.Dosage
     org.easyrpg.player
+    org.ppsspp.PPSSPP
     org.telegram.desktop
     com.surfshark.Surfshark
 )

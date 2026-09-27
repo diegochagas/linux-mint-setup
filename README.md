@@ -149,6 +149,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - Free Download Manager
 - Dosage
 - EasyRPG Player
+- PPSSPP (PSP emulator)
 - Telegram Desktop
 - Surfshark
 
