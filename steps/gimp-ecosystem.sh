@@ -19,7 +19,7 @@
 
 : "${GIMP_SETUP_REPO:=https://github.com/diegochagas/gimp-setup.git}"
 : "${COMFYUI_DIR:=}"
-: "${COMFYUI_MODEL_SETS=qwen,klein}"
+: "${COMFYUI_MODEL_SETS=qwen,klein,sam}"
 : "${COMFYUI_PORT:=8188}"
 
 # ComfyUI is installed by gimp-setup (and only on amd64), so a GIMP that
