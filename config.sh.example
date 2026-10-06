@@ -100,10 +100,13 @@ GOOSE_OLLAMA_CONTEXT="32768"
 GOOSE_SEARXNG_URL=""
 
 #
-# ComfyUI, the local AI models behind GIMP's AI tools
+# ComfyUI, the local AI models behind the AI tools of GIMP
+# (gimp-setup), GIMPhoto and comic-skills
 #
-# Installed by the GIMP setup (see GIMP_SETUP_REPO above), which
-# reads these three values from here. COMFYUI_DIR is where
+# Installed by the ComfyUI steps (steps/comfyui), as a `comfyui`
+# systemd user service that GIMP and GIMPhoto start when they open
+# and stop when they close; they find it through that service, so
+# nothing else needs these values. COMFYUI_DIR is where
 # ComfyUI, its Python environment and its models are installed,
 # e.g. a directory on a larger data disk: the models are tens of
 # GB and it wants about 45 GB free. Needs an NVIDIA GPU with its
@@ -133,6 +136,16 @@ COMFYUI_MODEL_SETS="qwen,klein,sam"
 # Port the ComfyUI user service listens on (127.0.0.1 only).
 #
 COMFYUI_PORT="8188"
+
+#
+# Where ComfyUI, its custom nodes and PyTorch come from. The
+# defaults are the official repositories and PyTorch's CUDA 12.8
+# wheels; point them at a fork or another CUDA build if needed.
+#
+COMFYUI_REPO="https://github.com/comfyanonymous/ComfyUI.git"
+COMFYUI_GGUF_NODE_REPO="https://github.com/city96/ComfyUI-GGUF.git"
+COMFYUI_SAM2_NODE_REPO="https://github.com/kijai/ComfyUI-segment-anything-2.git"
+COMFYUI_TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 
 #
 # RPG Maker library

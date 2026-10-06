@@ -63,6 +63,7 @@ source "$SCRIPT_DIR/steps/wattage.sh"
 source "$SCRIPT_DIR/steps/winboat.sh"
 source "$SCRIPT_DIR/steps/snap-packages.sh"
 source "$SCRIPT_DIR/steps/flatpak-packages.sh"
+source "$SCRIPT_DIR/steps/comfyui/comfyui.sh"
 source "$SCRIPT_DIR/steps/gimp-ecosystem.sh"
 source "$SCRIPT_DIR/steps/blender.sh"
 source "$SCRIPT_DIR/steps/tailscale.sh"
@@ -155,6 +156,10 @@ run_setup_steps() {
     run_step install   "WinBoat"             install_winboat
     run_step install   "Snap Packages"       install_snap_packages
     run_step install   "Flatpak Packages"    install_flatpak_packages
+    run_step install   "ComfyUI"             install_comfyui
+    run_step install   "ComfyUI Nodes"       install_comfyui_nodes
+    run_step configure "ComfyUI Models"      configure_comfyui_models
+    run_step configure "ComfyUI Service"     configure_comfyui_service
     run_step install   "GIMP Ecosystem"      install_gimp_ecosystem
     run_step install   "Blender"             install_blender
     run_step install   "Tailscale"           install_tailscale

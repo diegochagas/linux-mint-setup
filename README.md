@@ -28,8 +28,8 @@ install the OS itself, only what runs on top of it.
   and WinBoat (a Windows-app compatibility layer) are the heaviest
   consumers of RAM/disk if you actually use them — a machine that skips
   those can get by with less than the "comfortable" numbers above.
-- The [local image models](https://github.com/diegochagas/gimp-setup#local-ai-models-comfyui)
-  (ComfyUI, installed by the GIMP ecosystem step) are the heaviest
+- The [local image models](#local-ai-image-models-comfyui)
+  (ComfyUI) are the heaviest
   download of all: ComfyUI plus the default model sets is about 42 GB on
   disk and needs an NVIDIA GPU. They are skipped unless `COMFYUI_DIR` is
   set in `config.sh`.
@@ -153,27 +153,75 @@ The script installs Flatpak, adds Flathub, and installs:
 - Telegram Desktop
 - Surfshark
 
+### Local AI Image Models (ComfyUI)
+
+The AI tools of GIMP ([gimp-setup](https://github.com/diegochagas/gimp-setup)),
+[GIMPhoto](https://github.com/diegochagas/gimphoto) and
+[comic-skills](https://github.com/diegochagas/comic-skills) run on a local
+[ComfyUI](https://github.com/comfyanonymous/ComfyUI) server serving
+open-weight image models, with no accounts, credits or limits. The ComfyUI
+steps (`steps/comfyui/`) install it, before the GIMP ecosystem; they are
+**skipped unless `COMFYUI_DIR` is set** in `config.sh`, because the models
+are tens of GB.
+
+- Installs ComfyUI in `COMFYUI_DIR` with its own Python virtual environment
+  and PyTorch built for CUDA (`COMFYUI_TORCH_INDEX_URL`, CUDA 12.8 by
+  default). AMD64 only; needs an NVIDIA GPU with the proprietary driver
+  (Driver Manager) and `python3-venv` (in the APT packages).
+- Adds the [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) custom
+  node, which loads quantized models: a 20B editing model then runs on a
+  6 GB card, keeping the rest of its weights in RAM; and the
+  [SAM 2 nodes](https://github.com/kijai/ComfyUI-segment-anything-2)
+  (pinned commit), behind GIMP's Object Selection.
+- Downloads the model sets named in `COMFYUI_MODEL_SETS` (see
+  [`steps/comfyui/models.tsv`](steps/comfyui/models.tsv)), each file
+  verified against the SHA-256 Hugging Face publishes for it and marked as
+  verified so later runs do not re-hash it. An interrupted download resumes
+  on the next run.
+
+  | Set | Models | Size | Good at |
+  | --- | --- | --- | --- |
+  | `qwen` | Qwen-Image-Edit-2511 (4-bit GGUF) + Qwen2.5-VL text encoder, VAE and the 4-step Lightning LoRA | ~22 GB | Best quality: instruction edits that keep characters and text consistent. ~100 s per 1 MP image on a 6 GB GPU |
+  | `klein` | FLUX.2 klein 4B (fp8) + Qwen3-4B text encoder and VAE | ~12 GB | Three times faster (~35 s), lower quality on detailed art. The only one that also generates images from text |
+  | `sam` | SAM 2.1 large (fp16) | ~450 MB | Segment Anything: Object Selection / Select Subject, ~3 s per selection |
+
+  All three are installed by default (about 35 GB of models plus 8 GB for
+  ComfyUI and PyTorch, and it wants 45 GB free); name only some to save
+  disk. All are Apache 2.0, so they can be used commercially.
+- Writes a `comfyui` **systemd user service** on `127.0.0.1:COMFYUI_PORT`
+  (8188 by default). It is deliberately **not enabled at boot**: it holds
+  GPU memory while it runs. GIMP and GIMPhoto start it when they open and
+  stop it when they close; they find ComfyUI through this service, so they
+  need no setting of their own.
+
+```bash
+systemctl --user start comfyui     # then open http://127.0.0.1:8188
+systemctl --user stop comfyui      # frees the GPU and the RAM
+systemctl --user status comfyui    # is it running?
+```
+
+Scripts can drive it through its HTTP API and start the service themselves,
+as comic-skills does (`INPAINT=qwen COMFYUI_SERVICE=comfyui`).
+
 ### GIMP Ecosystem
 
 The complete GIMP ecosystem lives in its own repository:
-[gimp-setup](https://github.com/diegochagas/gimp-setup). That includes the
-[local AI models](https://github.com/diegochagas/gimp-setup#local-ai-models-comfyui)
-(ComfyUI with FLUX.2 klein and Qwen-Image-Edit) behind GIMP's AI tools, which
-run fully on this machine with no accounts or API keys.
+[gimp-setup](https://github.com/diegochagas/gimp-setup). Its AI tools run on
+the [local ComfyUI](#local-ai-image-models-comfyui) installed by the steps
+above: gimp-setup finds it through its `comfyui` service, adds its own
+ComfyUI node and makes GIMP start and stop it.
 
 If the GIMP Flatpak is already installed, this step is skipped entirely —
-GIMP itself is the marker for the whole ecosystem — unless `COMFYUI_DIR` is
-set and ComfyUI is not installed there yet. To add other missing pieces (or
-another model set) to an existing GIMP install, run the (idempotent)
+GIMP itself is the marker for the whole ecosystem — unless a ComfyUI
+installed after GIMP does not have gimp-setup's node yet. To add other
+missing pieces to an existing GIMP install, run the (idempotent)
 `gimp-setup/setup.sh` directly.
 
 Otherwise the script clones that repository and runs its `setup.sh`, which
 installs and configures with a single command the features listed in [gimp-setup/docs/](https://github.com/diegochagas/gimp-setup/tree/main/docs)
 
 The repository to clone can be overridden with the `GIMP_SETUP_REPO` variable
-in `config.sh`. The ComfyUI settings set there — `COMFYUI_DIR` (empty skips
-ComfyUI), `COMFYUI_MODEL_SETS` and `COMFYUI_PORT` — are forwarded to the GIMP
-setup. See the
+in `config.sh`. See the
 [gimp-setup README](https://github.com/diegochagas/gimp-setup#readme) for
 details, configuration and how to add new GIMP features.
 
@@ -390,6 +438,7 @@ steps/              One setup step (install_* or configure_*) per file
   <name>.sh         A step without extra files
   <name>/<name>.sh  A step that ships files, kept in the same folder:
   antimicrox/       antimicrox.sh and the profiles/ it copies
+  comfyui/          comfyui.sh and the models.tsv it downloads
   fonts/            fonts.sh and the fonts/ it installs
   goose/            goose.sh, goose-config.py (merges Goose's
                     config.yaml) and the goosehints it installs

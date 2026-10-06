@@ -1,40 +1,41 @@
 #!/usr/bin/env bash
 #
 # The complete GIMP ecosystem (Flatpak GIMP, plug-ins,
-# resources, extra features and the local AI models
-# behind its AI tools: ComfyUI), installed by the
-# dedicated gimp-setup repository:
+# resources and extra features), installed by the dedicated
+# gimp-setup repository:
 #
 #   https://github.com/diegochagas/gimp-setup
 #
-# GIMP itself is the marker for the whole ecosystem: if
-# the GIMP Flatpak is already installed, nothing
-# GIMP-related is (re)installed. The exception is
-# ComfyUI: while COMFYUI_DIR is set and ComfyUI is not
-# installed there yet, gimp-setup still runs, so it can
-# install it. The per-feature detection lives in
-# gimp-setup's own idempotent setup.sh; run it directly
-# to add missing pieces to an existing install.
+# GIMP's AI tools run on the local ComfyUI installed by the
+# ComfyUI steps before this one (steps/comfyui); gimp-setup
+# finds it through its `comfyui` service, adds its own
+# ComfyUI node to it and starts it with GIMP.
+#
+# GIMP itself is the marker for the whole ecosystem: if the
+# GIMP Flatpak is already installed, nothing GIMP-related is
+# (re)installed. The exception is a ComfyUI installed after
+# GIMP: gimp-setup still runs, so its AI tools get their
+# ComfyUI node and the start with GIMP. The per-feature
+# detection lives in gimp-setup's own idempotent setup.sh;
+# run it directly to add missing pieces to an existing
+# install.
 #
 
 : "${GIMP_SETUP_REPO:=https://github.com/diegochagas/gimp-setup.git}"
-: "${COMFYUI_DIR:=}"
-: "${COMFYUI_MODEL_SETS=qwen,klein,sam}"
-: "${COMFYUI_PORT:=8188}"
 
-# ComfyUI is installed by gimp-setup (and only on amd64), so a GIMP that
-# is already there is not a marker while ComfyUI is wanted but missing.
-gimp_ecosystem_needs_comfyui() {
-    [[ -n "$COMFYUI_DIR" && "$ARCHITECTURE" == "amd64" ]] || return 1
-
-    ! { file_exists "$COMFYUI_DIR/main.py" && file_exists "$COMFYUI_DIR/.venv/bin/python"; }
+# A ComfyUI is installed (steps/comfyui) but gimp-setup has
+# not added its node to it yet.
+gimp_ecosystem_needs_comfyui_node() {
+    [[ -n "${COMFYUI_DIR:-}" ]] &&
+        file_exists "$COMFYUI_DIR/main.py" &&
+        ! directory_exists "$COMFYUI_DIR/custom_nodes/gimp_setup_nodes"
 }
 
 install_gimp_ecosystem() {
     local setup_dir
     local setup_args=()
 
-    if is_flatpak_installed org.gimp.GIMP && ! gimp_ecosystem_needs_comfyui; then
+    if is_flatpak_installed org.gimp.GIMP && ! gimp_ecosystem_needs_comfyui_node; then
         skip_step "Already installed"
         return 0
     fi
@@ -46,10 +47,6 @@ install_gimp_ecosystem() {
     if is_dry_run; then
         setup_args+=(--dry-run)
     fi
-
-    # The ComfyUI settings are read by gimp-setup's ComfyUI feature (and
-    # the address of that ComfyUI by its AI plug-ins) from the environment.
-    export COMFYUI_DIR COMFYUI_MODEL_SETS COMFYUI_PORT
 
     run bash "$setup_dir/setup.sh" "${setup_args[@]}"
 }
