@@ -339,6 +339,10 @@ It also:
   by `c` produces `ç`, and `´` followed by `Shift+C` produces `Ç`. Restart
   applications that were open during setup before testing the new sequence.
 - Configures CopyQ to start automatically.
+- Configures Thunderbird to show the full content of every email: remote
+  images and content load automatically and messages display as original
+  HTML. The preferences go in the default profile's `user.js`; if there is no
+  profile yet, open Thunderbird once and re-run `setup.sh`.
 - Configures LocalSend to start automatically, minimized to the system tray.
 - Installs the fonts from `steps/fonts/fonts` into
   `~/.local/share/fonts/linux-mint-setup` and refreshes the font cache with

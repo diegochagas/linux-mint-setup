@@ -75,6 +75,7 @@ source "$SCRIPT_DIR/steps/hypnotix.sh"
 source "$SCRIPT_DIR/steps/keyboard-shortcuts.sh"
 source "$SCRIPT_DIR/steps/xcompose/xcompose.sh"
 source "$SCRIPT_DIR/steps/copyq.sh"
+source "$SCRIPT_DIR/steps/thunderbird.sh"
 source "$SCRIPT_DIR/steps/fonts/fonts.sh"
 source "$SCRIPT_DIR/steps/antimicrox/antimicrox.sh"
 source "$SCRIPT_DIR/steps/easyrpg.sh"
@@ -170,6 +171,7 @@ run_setup_steps() {
     run_step configure "Keyboard Shortcuts"  configure_keyboard_shortcuts
     run_step configure "XCompose"            configure_xcompose
     run_step configure "CopyQ"               configure_copyq
+    run_step configure "Thunderbird"         configure_thunderbird
     run_step configure "LocalSend Autostart" configure_localsend_autostart
     run_step configure "Remote Mouse Launchers" configure_remote_mouse_launchers
     run_step configure "Fonts"               configure_fonts
