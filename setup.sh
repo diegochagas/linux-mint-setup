@@ -57,7 +57,6 @@ source "$SCRIPT_DIR/steps/balena-etcher.sh"
 source "$SCRIPT_DIR/steps/immich-go.sh"
 source "$SCRIPT_DIR/steps/localsend.sh"
 source "$SCRIPT_DIR/steps/zapfast.sh"
-source "$SCRIPT_DIR/steps/spotifast.sh"
 source "$SCRIPT_DIR/steps/scrcpy-gui.sh"
 source "$SCRIPT_DIR/steps/app-manager.sh"
 source "$SCRIPT_DIR/steps/wattage.sh"
@@ -151,7 +150,6 @@ run_setup_steps() {
     run_step install   "immich-go"           install_immich_go
     run_step install   "LocalSend"           install_localsend
     run_step install   "ZapFast"             install_zapfast
-    run_step install   "Spotifast"          install_spotifast
     run_step install   "Scrcpy GUI"          install_scrcpy_gui
     run_step install   "AppManager"          install_app_manager
     run_step install   "Wattage"             install_wattage

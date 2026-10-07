@@ -111,9 +111,6 @@ actions:
   [ZapFast](https://zapfast.rocks/) release as a user-local WhatsApp client.
   Its launcher uses the bundled SVG by absolute path so Cinnamon displays the
   ZapFast icon even before its user icon-theme cache is registered.
-- On AMD64 and ARM64 systems, installs the latest
-  [Spotifast](https://spotifast.rocks/) release as a user-local Spotify client.
-  Its launcher uses the bundled SVG by absolute path, like ZapFast.
 - On AMD64 systems, installs the latest [Scrcpy GUI](https://github.com/SimonAKing/scrcpy-gui)
   `.deb` release. Its official SHA-256 manifest is verified before installation;
   the package bundles compatible `scrcpy` and `adb` binaries.
@@ -123,10 +120,6 @@ actions:
   `nightly.link`.
 - On AMD64 systems, installs [WinBoat](https://winboat.app/) from its AppImage
   release using AppManager.
-- Installs [Spotifast](https://spotifast.rocks/) from its latest GitHub Linux
-  release into `~/.local/lib/spotifast`, makes it available as
-  `~/.local/bin/spotifast`, and creates a Cinnamon-compatible launcher with its
-  bundled SVG icon.
 - Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) for
   terminal use.
 - On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
