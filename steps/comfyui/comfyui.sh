@@ -10,9 +10,7 @@
 # - Custom nodes: ComfyUI-GGUF, which loads quantized (GGUF)
 #   models, so a 20B editing model fits in a 6 GB GPU by
 #   keeping the rest of its weights in RAM; the SAM 2 nodes
-#   (pinned), behind GIMP's and GIMPhoto's AI selections; the
-#   BiRefNet nodes (pinned), behind GIMPhoto's Select Subject;
-#   and
+#   (pinned), behind GIMP's and GIMPhoto's AI selections; and
 #   this setup's own BBoxFromJSON (custom_nodes/), which lets
 #   apps give SAM 2 box prompts through the HTTP API.
 # - The model sets listed in COMFYUI_MODEL_SETS (see
@@ -39,9 +37,8 @@
 : "${COMFYUI_REPO:=https://github.com/comfyanonymous/ComfyUI.git}"
 : "${COMFYUI_GGUF_NODE_REPO:=https://github.com/city96/ComfyUI-GGUF.git}"
 : "${COMFYUI_SAM2_NODE_REPO:=https://github.com/kijai/ComfyUI-segment-anything-2.git}"
-: "${COMFYUI_BIREFNET_NODE_REPO:=https://github.com/lldacing/ComfyUI_BiRefNet_ll.git}"
 : "${COMFYUI_TORCH_INDEX_URL:=https://download.pytorch.org/whl/cu128}"
-: "${COMFYUI_MODEL_SETS=qwen,klein,sam,birefnet}"
+: "${COMFYUI_MODEL_SETS=qwen,klein,sam}"
 : "${COMFYUI_PORT:=8188}"
 
 readonly COMFYUI_MODELS_FILE="${BASH_SOURCE[0]%/*}/models.tsv"
@@ -52,10 +49,6 @@ readonly COMFYUI_SERVICE_UNIT="$HOME/.config/systemd/user/comfyui.service"
 # Pinned commit of ComfyUI-segment-anything-2 (SAM 2 nodes);
 # bump it to update.
 readonly COMFYUI_SAM2_NODE_COMMIT="0c35fff5f382803e2310103357b5e985f5437f32"
-# Pinned commit of ComfyUI_BiRefNet_ll (BiRefNet nodes, MIT; it loads
-# models/BiRefNet/General.safetensors, model set "birefnet"); bump it to
-# update.
-readonly COMFYUI_BIREFNET_NODE_COMMIT="5443a2aa16cfbd98bb2f7dcc8bdcb70439e08529"
 
 # The models are downloaded into a checkout that also holds
 # PyTorch and CUDA libraries (~8 GB) on top of them.
@@ -63,19 +56,6 @@ readonly COMFYUI_MIN_FREE_GB=45
 
 comfyui_python() {
     echo "$COMFYUI_DIR/.venv/bin/python"
-}
-
-# Installs Python packages into ComfyUI's environment: with its
-# pip, or with uv when the environment was made by uv (no pip in
-# it). Arguments: what pip install takes.
-comfyui_pip_install() {
-    if "$(comfyui_python)" -m pip --version > /dev/null 2>&1; then
-        run "$(comfyui_python)" -m pip install "$@"
-    elif binary_exists uv; then
-        run uv pip install --python "$(comfyui_python)" "$@"
-    else
-        run "$(comfyui_python)" -m pip install "$@"
-    fi
 }
 
 comfyui_is_installed() {
@@ -151,14 +131,11 @@ install_comfyui() {
 }
 
 # Installs the ComfyUI-GGUF node, the SAM 2 nodes (pinned; they
-# need no extra Python packages), the BiRefNet nodes (pinned) and
-# this setup's own nodes (BBoxFromJSON, which lets API clients give
-# SAM 2 box prompts).
+# need no extra Python packages) and this setup's own nodes
+# (BBoxFromJSON, which lets API clients give SAM 2 box prompts).
 install_comfyui_nodes() {
     local gguf_dir="$COMFYUI_DIR/custom_nodes/ComfyUI-GGUF"
     local sam2_dir="$COMFYUI_DIR/custom_nodes/ComfyUI-segment-anything-2"
-    local birefnet_dir="$COMFYUI_DIR/custom_nodes/ComfyUI_BiRefNet_ll"
-    local birefnet_changed=false
     local own_dir="$COMFYUI_DIR/custom_nodes/linux_mint_setup_nodes"
     local changed=false
 
@@ -166,7 +143,7 @@ install_comfyui_nodes() {
 
     if ! directory_exists "$gguf_dir"; then
         run git clone "$COMFYUI_GGUF_NODE_REPO" "$gguf_dir"
-        comfyui_pip_install -r "$gguf_dir/requirements.txt"
+        run "$(comfyui_python)" -m pip install -r "$gguf_dir/requirements.txt"
         changed=true
     fi
 
@@ -178,25 +155,6 @@ install_comfyui_nodes() {
     if [[ "$(git -C "$sam2_dir" rev-parse HEAD 2> /dev/null)" != "$COMFYUI_SAM2_NODE_COMMIT" ]]; then
         run git -C "$sam2_dir" fetch --quiet origin
         run git -C "$sam2_dir" checkout --quiet "$COMFYUI_SAM2_NODE_COMMIT"
-        changed=true
-    fi
-
-    if ! directory_exists "$birefnet_dir/.git"; then
-        run git clone "$COMFYUI_BIREFNET_NODE_REPO" "$birefnet_dir"
-        birefnet_changed=true
-    fi
-
-    if [[ "$(git -C "$birefnet_dir" rev-parse HEAD 2> /dev/null)" != "$COMFYUI_BIREFNET_NODE_COMMIT" ]]; then
-        run git -C "$birefnet_dir" fetch --quiet origin
-        run git -C "$birefnet_dir" checkout --quiet "$COMFYUI_BIREFNET_NODE_COMMIT"
-        birefnet_changed=true
-    fi
-
-    # Its Python packages (timm, opencv), whenever the node is new or
-    # changed, and when one is missing (an earlier run stopped half-way).
-    if [[ "$birefnet_changed" == true ]] ||
-        ! "$(comfyui_python)" -c 'import timm, cv2' 2> /dev/null; then
-        comfyui_pip_install -r "$birefnet_dir/requirements.txt"
         changed=true
     fi
 
@@ -217,16 +175,14 @@ install_comfyui_nodes() {
     fi
 }
 
-# Prints "directory<tab>sha256<tab>url<tab>file name" for every
-# model of the sets in COMFYUI_MODEL_SETS (comma or space
-# separated); the file name is the URL's unless models.tsv names
-# one.
+# Prints "directory<tab>sha256<tab>url" for every model of
+# the sets in COMFYUI_MODEL_SETS (comma or space separated).
 comfyui_selected_models() {
     local sets="${COMFYUI_MODEL_SETS//,/ }"
     local set
 
     for set in $sets; do
-        awk -F'\t' -v set="$set" '$1 == set { n = split($4, parts, "/"); print $2 "\t" $3 "\t" $4 "\t" ($5 != "" ? $5 : parts[n]) }' "$COMFYUI_MODELS_FILE"
+        awk -F'\t' -v set="$set" '$1 == set { print $2 "\t" $3 "\t" $4 }' "$COMFYUI_MODELS_FILE"
     done
 }
 
@@ -264,7 +220,6 @@ comfyui_file_has_checksum() {
 #   $1 - Directory under ComfyUI's models/
 #   $2 - Expected SHA-256
 #   $3 - URL
-#   $4 - File name
 #
 # Returns:
 #   0 - downloaded now
@@ -274,14 +229,13 @@ comfyui_download_model() {
     local directory="$1"
     local checksum="$2"
     local url="$3"
-    local file_name="$4"
-    local target="$COMFYUI_DIR/models/$directory/$file_name"
+    local target="$COMFYUI_DIR/models/$directory/${url##*/}"
 
     if file_exists "$target" && comfyui_file_has_checksum "$target" "$checksum"; then
         return 2
     fi
 
-    print_info "➜ Download $file_name ($directory)"
+    print_info "➜ Download ${url##*/} ($directory)"
 
     if is_dry_run; then
         return 0
@@ -297,7 +251,7 @@ comfyui_download_model() {
     fi
 
     if ! comfyui_file_has_checksum "$target" "$checksum"; then
-        print_info "   ⚠️ Checksum mismatch, removing $file_name"
+        print_info "   ⚠️ Checksum mismatch, removing ${url##*/}"
         rm -f "$target"
         return 1
     fi
@@ -309,7 +263,7 @@ configure_comfyui_models() {
     local wanted=0
     local present=0
     local status
-    local directory checksum url file_name
+    local directory checksum url
 
     comfyui_step_applies || return 0
 
@@ -318,11 +272,11 @@ configure_comfyui_models() {
         return 0
     fi
 
-    while IFS=$'\t' read -r directory checksum url file_name; do
+    while IFS=$'\t' read -r directory checksum url; do
         [[ -n "$url" ]] || continue
         wanted=$((wanted + 1))
         status=0
-        comfyui_download_model "$directory" "$checksum" "$url" "$file_name" || status=$?
+        comfyui_download_model "$directory" "$checksum" "$url" || status=$?
         case "$status" in
             0) ;;
             2) present=$((present + 1)) ;;
