@@ -179,7 +179,10 @@ are tens of GB.
   node, which loads quantized models: a 20B editing model then runs on a
   6 GB card, keeping the rest of its weights in RAM; and the
   [SAM 2 nodes](https://github.com/kijai/ComfyUI-segment-anything-2)
-  (pinned commit), behind GIMP's Object Selection.
+  (pinned commit), behind GIMP's and GIMPhoto's AI selections; and this
+  setup's own `BBoxFromJSON` node
+  ([`steps/comfyui/custom_nodes`](steps/comfyui/custom_nodes)), which lets
+  apps give SAM 2 box prompts through ComfyUI's HTTP API.
 - Downloads the model sets named in `COMFYUI_MODEL_SETS` (see
   [`steps/comfyui/models.tsv`](steps/comfyui/models.tsv)), each file
   verified against the SHA-256 Hugging Face publishes for it and marked as
@@ -445,7 +448,8 @@ steps/              One setup step (install_* or configure_*) per file
   <name>.sh         A step without extra files
   <name>/<name>.sh  A step that ships files, kept in the same folder:
   antimicrox/       antimicrox.sh and the profiles/ it copies
-  comfyui/          comfyui.sh and the models.tsv it downloads
+  comfyui/          comfyui.sh, the models.tsv it downloads and the
+                    custom_nodes/ it installs into ComfyUI
   fonts/            fonts.sh and the fonts/ it installs
   goose/            goose.sh, goose-config.py (merges Goose's
                     config.yaml) and the goosehints it installs

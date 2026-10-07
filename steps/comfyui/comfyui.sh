@@ -9,8 +9,10 @@
 #   virtual environment and PyTorch built for CUDA.
 # - Custom nodes: ComfyUI-GGUF, which loads quantized (GGUF)
 #   models, so a 20B editing model fits in a 6 GB GPU by
-#   keeping the rest of its weights in RAM; and the SAM 2
-#   nodes (pinned), behind GIMP's Object Selection.
+#   keeping the rest of its weights in RAM; the SAM 2 nodes
+#   (pinned), behind GIMP's and GIMPhoto's AI selections; and
+#   this setup's own BBoxFromJSON (custom_nodes/), which lets
+#   apps give SAM 2 box prompts through the HTTP API.
 # - The model sets listed in COMFYUI_MODEL_SETS (see
 #   models.tsv next to this file), each file verified
 #   against the SHA-256 Hugging Face publishes for it.
@@ -40,6 +42,8 @@
 : "${COMFYUI_PORT:=8188}"
 
 readonly COMFYUI_MODELS_FILE="${BASH_SOURCE[0]%/*}/models.tsv"
+# This setup's own small nodes (BBoxFromJSON), copied into custom_nodes/.
+readonly COMFYUI_OWN_NODES_DIR="${BASH_SOURCE[0]%/*}/custom_nodes/linux_mint_setup_nodes"
 readonly COMFYUI_SERVICE_UNIT="$HOME/.config/systemd/user/comfyui.service"
 
 # Pinned commit of ComfyUI-segment-anything-2 (SAM 2 nodes);
@@ -126,11 +130,13 @@ install_comfyui() {
     run "$(comfyui_python)" -m pip install -r "$COMFYUI_DIR/requirements.txt"
 }
 
-# Installs the ComfyUI-GGUF node and the SAM 2 nodes (pinned;
-# they need no extra Python packages).
+# Installs the ComfyUI-GGUF node, the SAM 2 nodes (pinned; they
+# need no extra Python packages) and this setup's own nodes
+# (BBoxFromJSON, which lets API clients give SAM 2 box prompts).
 install_comfyui_nodes() {
     local gguf_dir="$COMFYUI_DIR/custom_nodes/ComfyUI-GGUF"
     local sam2_dir="$COMFYUI_DIR/custom_nodes/ComfyUI-segment-anything-2"
+    local own_dir="$COMFYUI_DIR/custom_nodes/linux_mint_setup_nodes"
     local changed=false
 
     comfyui_step_applies || return 0
@@ -149,6 +155,12 @@ install_comfyui_nodes() {
     if [[ "$(git -C "$sam2_dir" rev-parse HEAD 2> /dev/null)" != "$COMFYUI_SAM2_NODE_COMMIT" ]]; then
         run git -C "$sam2_dir" fetch --quiet origin
         run git -C "$sam2_dir" checkout --quiet "$COMFYUI_SAM2_NODE_COMMIT"
+        changed=true
+    fi
+
+    if ! diff -rq "$COMFYUI_OWN_NODES_DIR" "$own_dir" -x __pycache__ > /dev/null 2>&1; then
+        run mkdir -p "$own_dir"
+        run cp -r "$COMFYUI_OWN_NODES_DIR/." "$own_dir/"
         changed=true
     fi
 
