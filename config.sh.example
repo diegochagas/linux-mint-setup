@@ -50,6 +50,7 @@ BALENA_ETCHER_RELEASES_API_URL="https://api.github.com/repos/balena-io/etcher/re
 IMMICH_GO_RELEASES_API_URL="https://api.github.com/repos/simulot/immich-go/releases/latest"
 LOCALSEND_RELEASES_API_URL="https://api.github.com/repos/localsend/localsend/releases/latest"
 ZAPFAST_RELEASES_API_URL="https://api.github.com/repos/crmne/zapfast/releases/latest"
+SPOTIFAST_RELEASES_API_URL="https://api.github.com/repos/crmne/spotifast/releases/latest"
 SCRCPY_GUI_RELEASES_API_URL="https://api.github.com/repos/SimonAKing/scrcpy-gui/releases/latest"
 APP_MANAGER_RELEASES_API_URL="https://api.github.com/repos/kem-a/AppManager/releases/latest"
 WATTAGE_NIGHTLY_BASE_URL="https://nightly.link/v81d/wattage/workflows/build-appimage/main"
