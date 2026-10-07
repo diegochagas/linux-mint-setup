@@ -179,7 +179,9 @@ are tens of GB.
   node, which loads quantized models: a 20B editing model then runs on a
   6 GB card, keeping the rest of its weights in RAM; and the
   [SAM 2 nodes](https://github.com/kijai/ComfyUI-segment-anything-2)
-  (pinned commit), behind GIMP's and GIMPhoto's AI selections; and this
+  (pinned commit), behind GIMP's and GIMPhoto's AI selections; the
+  [BiRefNet nodes](https://github.com/lldacing/ComfyUI_BiRefNet_ll)
+  (pinned commit), behind GIMPhoto's Select Subject; and this
   setup's own `BBoxFromJSON` node
   ([`steps/comfyui/custom_nodes`](steps/comfyui/custom_nodes)), which lets
   apps give SAM 2 box prompts through ComfyUI's HTTP API.
@@ -193,11 +195,12 @@ are tens of GB.
   | --- | --- | --- | --- |
   | `qwen` | Qwen-Image-Edit-2511 (4-bit GGUF) + Qwen2.5-VL text encoder, VAE and the 4-step Lightning LoRA | ~22 GB | Best quality: instruction edits that keep characters and text consistent. ~100 s per 1 MP image on a 6 GB GPU |
   | `klein` | FLUX.2 klein 4B (fp8) + Qwen3-4B text encoder and VAE | ~12 GB | Three times faster (~35 s), lower quality on detailed art. The only one that also generates images from text |
-  | `sam` | SAM 2.1 large (fp16) | ~450 MB | Segment Anything: Object Selection / Select Subject, ~3 s per selection |
+  | `sam` | SAM 2.1 large (fp16) | ~450 MB | Segment Anything: Object Selection, ~3 s per selection |
+  | `birefnet` | BiRefNet general | ~450 MB | Finds the main subject of a picture: GIMPhoto's Select Subject, a few seconds |
 
-  All three are installed by default (about 35 GB of models plus 8 GB for
+  All four are installed by default (about 35 GB of models plus 8 GB for
   ComfyUI and PyTorch, and it wants 45 GB free); name only some to save
-  disk. All are Apache 2.0, so they can be used commercially.
+  disk. All are Apache 2.0 or MIT, so they can be used commercially.
 - Writes a `comfyui` **systemd user service** on `127.0.0.1:COMFYUI_PORT`
   (8188 by default). It is deliberately **not enabled at boot**: it holds
   GPU memory while it runs. GIMP and GIMPhoto start it when they open and
