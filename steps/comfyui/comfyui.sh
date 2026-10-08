@@ -12,7 +12,8 @@
 #   keeping the rest of its weights in RAM; the SAM 2 nodes
 #   (pinned), behind GIMP's and GIMPhoto's AI selections; the
 #   BiRefNet nodes (pinned), behind GIMPhoto's Select Subject;
-#   and
+#   the inpaint nodes (pinned), which run LaMa for GIMPhoto's
+#   Remove tool; and
 #   this setup's own BBoxFromJSON (custom_nodes/), which lets
 #   apps give SAM 2 box prompts through the HTTP API.
 # - The model sets listed in COMFYUI_MODEL_SETS (see
@@ -40,8 +41,9 @@
 : "${COMFYUI_GGUF_NODE_REPO:=https://github.com/city96/ComfyUI-GGUF.git}"
 : "${COMFYUI_SAM2_NODE_REPO:=https://github.com/kijai/ComfyUI-segment-anything-2.git}"
 : "${COMFYUI_BIREFNET_NODE_REPO:=https://github.com/lldacing/ComfyUI_BiRefNet_ll.git}"
+: "${COMFYUI_INPAINT_NODE_REPO:=https://github.com/Acly/comfyui-inpaint-nodes.git}"
 : "${COMFYUI_TORCH_INDEX_URL:=https://download.pytorch.org/whl/cu128}"
-: "${COMFYUI_MODEL_SETS=qwen,klein,sam,birefnet}"
+: "${COMFYUI_MODEL_SETS=qwen,klein,sam,birefnet,lama}"
 : "${COMFYUI_PORT:=8188}"
 
 readonly COMFYUI_MODELS_FILE="${BASH_SOURCE[0]%/*}/models.tsv"
@@ -56,6 +58,10 @@ readonly COMFYUI_SAM2_NODE_COMMIT="0c35fff5f382803e2310103357b5e985f5437f32"
 # models/BiRefNet/General.safetensors, model set "birefnet"); bump it to
 # update.
 readonly COMFYUI_BIREFNET_NODE_COMMIT="5443a2aa16cfbd98bb2f7dcc8bdcb70439e08529"
+# Pinned commit of comfyui-inpaint-nodes (GPL-3.0; it loads LaMa from
+# models/inpaint/big-lama.pt, model set "lama", through spandrel, which
+# ComfyUI already has); bump it to update.
+readonly COMFYUI_INPAINT_NODE_COMMIT="5b7681746fe19e563113d27366ba85236bc1ba5b"
 
 # The models are downloaded into a checkout that also holds
 # PyTorch and CUDA libraries (~8 GB) on top of them.
@@ -151,14 +157,16 @@ install_comfyui() {
 }
 
 # Installs the ComfyUI-GGUF node, the SAM 2 nodes (pinned; they
-# need no extra Python packages), the BiRefNet nodes (pinned) and
-# this setup's own nodes (BBoxFromJSON, which lets API clients give
+# need no extra Python packages), the BiRefNet nodes (pinned), the
+# inpaint nodes (pinned; no extra packages either) and this setup's
+# own nodes (BBoxFromJSON, which lets API clients give
 # SAM 2 box prompts).
 install_comfyui_nodes() {
     local gguf_dir="$COMFYUI_DIR/custom_nodes/ComfyUI-GGUF"
     local sam2_dir="$COMFYUI_DIR/custom_nodes/ComfyUI-segment-anything-2"
     local birefnet_dir="$COMFYUI_DIR/custom_nodes/ComfyUI_BiRefNet_ll"
     local birefnet_changed=false
+    local inpaint_dir="$COMFYUI_DIR/custom_nodes/comfyui-inpaint-nodes"
     local own_dir="$COMFYUI_DIR/custom_nodes/linux_mint_setup_nodes"
     local changed=false
 
@@ -197,6 +205,17 @@ install_comfyui_nodes() {
     if [[ "$birefnet_changed" == true ]] ||
         ! "$(comfyui_python)" -c 'import timm, cv2' 2> /dev/null; then
         comfyui_pip_install -r "$birefnet_dir/requirements.txt"
+        changed=true
+    fi
+
+    if ! directory_exists "$inpaint_dir/.git"; then
+        run git clone "$COMFYUI_INPAINT_NODE_REPO" "$inpaint_dir"
+        changed=true
+    fi
+
+    if [[ "$(git -C "$inpaint_dir" rev-parse HEAD 2> /dev/null)" != "$COMFYUI_INPAINT_NODE_COMMIT" ]]; then
+        run git -C "$inpaint_dir" fetch --quiet origin
+        run git -C "$inpaint_dir" checkout --quiet "$COMFYUI_INPAINT_NODE_COMMIT"
         changed=true
     fi
 
