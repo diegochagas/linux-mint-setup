@@ -20,7 +20,8 @@
 # already there and resumes interrupted model downloads.
 # In a dry run it is still cloned (into the temporary
 # workspace) and run with --dry-run, so the preview shows
-# what it would do.
+# what it would do. Its log is kept in this setup's logs/
+# as local-ai-setup_<date>.log.
 #
 
 : "${LOCAL_AI_SETUP_REPO:=https://github.com/diegochagas/local-ai-setup.git}"
@@ -63,6 +64,12 @@ install_local_ai() {
     print_info "➜ bash $setup_dir/setup.sh ${setup_args[*]}"
     # its own summary lists what failed; this setup carries on
     if ! env "${settings[@]}" bash "$setup_dir/setup.sh" "${setup_args[@]}"; then
-        warn_step "local-ai-setup stopped with an error (see above)"
+        warn_step "local-ai-setup stopped with an error (see its log)"
     fi
+
+    # its log is in the temporary clone: keep it next to this setup's
+    local log
+    for log in "$setup_dir"/logs/*.log; do
+        [[ -f "$log" ]] && cp "$log" "$LOG_DIR/local-ai-setup_${log##*/}"
+    done
 }

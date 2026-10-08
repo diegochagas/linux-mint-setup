@@ -24,9 +24,10 @@
 
 readonly GIMPHOTO_APP_ID="io.github.diegochagas.GIMPhoto"
 readonly GIMPHOTO_BUNDLE_SUFFIX=".flatpak"
+readonly GIMPHOTO_FLATHUB_REPO="https://dl.flathub.org/repo/flathub.flatpakrepo"
 
 install_gimphoto() {
-    local url checksum bundle
+    local release url checksum bundle
 
     if is_flatpak_installed "$GIMPHOTO_APP_ID"; then
         skip_step "Already installed"
@@ -35,8 +36,12 @@ install_gimphoto() {
 
     require_architecture amd64 || return 0
 
-    url="$(github_release_asset_url "$GIMPHOTO_RELEASES_API_URL" "$GIMPHOTO_BUNDLE_SUFFIX")"
-    checksum="$(github_release_asset_sha256 "$GIMPHOTO_RELEASES_API_URL" "$GIMPHOTO_BUNDLE_SUFFIX")"
+    release="$(curl -fsSL "$GIMPHOTO_RELEASES_API_URL" 2> /dev/null || true)"
+    url="$(jq -r --arg suffix "$GIMPHOTO_BUNDLE_SUFFIX" \
+        'first(.assets[]? | select(.name | endswith($suffix)) | .browser_download_url) // empty' <<< "$release" 2> /dev/null || true)"
+    checksum="$(jq -r --arg suffix "$GIMPHOTO_BUNDLE_SUFFIX" \
+        'first(.assets[]? | select(.name | endswith($suffix)) | .digest) // empty' <<< "$release" 2> /dev/null |
+        sed -n 's/^sha256://p')"
 
     if [[ -z "$url" || -z "$checksum" ]]; then
         warn_step "No GIMPhoto release with a Flatpak bundle found"
@@ -44,7 +49,10 @@ install_gimphoto() {
     fi
 
     bundle="$(make_work_dir gimphoto)/GIMPhoto.flatpak"
-    download_file "$url" "$bundle"
+    if ! download_file "$url" "$bundle"; then
+        warn_step "Could not download $url"
+        return 0
+    fi
 
     print_info "➜ sha256sum $bundle"
     if ! is_dry_run && [[ "$(sha256sum "$bundle" | awk '{ print $1 }')" != "$checksum" ]]; then
@@ -52,5 +60,10 @@ install_gimphoto() {
         return 0
     fi
 
-    run flatpak install --user -y --noninteractive "$bundle"
+    # the GNOME runtime GIMPhoto needs comes from Flathub, which a user
+    # installation can only use as its own remote
+    if ! run flatpak remote-add --user --if-not-exists flathub "$GIMPHOTO_FLATHUB_REPO" ||
+        ! run flatpak install --user -y --noninteractive "$bundle"; then
+        warn_step "flatpak could not install GIMPhoto"
+    fi
 }
