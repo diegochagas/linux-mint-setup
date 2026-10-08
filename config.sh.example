@@ -128,11 +128,13 @@ COMFYUI_DIR=""
 #           Selection (AI) / Subject (AI).
 #   birefnet - BiRefNet, ~450 MB. Finds the main subject of a
 #           picture: GIMPhoto's Select > Subject.
+#   lama  - Big-LaMa, ~200 MB. Fills in what GIMPhoto's Remove
+#           tool removes.
 #
-# All four by default. Leave empty to install ComfyUI without
+# All five by default. Leave empty to install ComfyUI without
 # any model.
 #
-COMFYUI_MODEL_SETS="qwen,klein,sam,birefnet"
+COMFYUI_MODEL_SETS="qwen,klein,sam,birefnet,lama"
 
 #
 # Port the ComfyUI user service listens on (127.0.0.1 only).
