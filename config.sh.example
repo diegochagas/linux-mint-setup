@@ -7,13 +7,14 @@
 ########################################
 
 #
-# GIMP ecosystem repository
+# Local AI repository
 #
-# Cloned and executed by the setup to install the
-# complete GIMP ecosystem. Override to use a fork
-# or a local clone.
+# Cloned and executed by the setup to install ComfyUI and
+# Ollama (see the COMFYUI_* and OLLAMA_* settings below,
+# which are passed to it). Override to use a fork or a
+# local clone.
 #
-GIMP_SETUP_REPO="https://github.com/diegochagas/gimp-setup.git"
+LOCAL_AI_SETUP_REPO="https://github.com/diegochagas/local-ai-setup.git"
 
 #
 # Homelab backup repository
@@ -61,6 +62,7 @@ CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
 DISCORD_DEB_URL="https://discord.com/api/download?platform=linux&format=deb"
 OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
+GIMPHOTO_RELEASES_API_URL="https://api.github.com/repos/diegochagas/gimphoto/releases/latest"
 GOOSE_CLI_INSTALL_URL="https://github.com/block/goose/releases/download/stable/download_cli.sh"
 GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest"
 
@@ -69,7 +71,8 @@ GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest
 #
 # Where Ollama stores its models (tens of GB), e.g. a
 # directory on a larger data disk. It is created and
-# owned by the ollama service user.
+# owned by the ollama service user. Ollama is installed
+# by local-ai-setup (the Local AI step).
 #
 # Leave empty to use Ollama's default location.
 #
@@ -100,12 +103,12 @@ GOOSE_OLLAMA_CONTEXT="32768"
 GOOSE_SEARXNG_URL=""
 
 #
-# ComfyUI, the local AI models behind the AI tools of GIMP
-# (gimp-setup), GIMPhoto and comic-skills
+# ComfyUI, the local AI models behind the AI tools of GIMPhoto,
+# comic-skills and photo-restore
 #
-# Installed by the ComfyUI steps (steps/comfyui), as a `comfyui`
-# systemd user service that GIMP and GIMPhoto start when they open
-# and stop when they close; they find it through that service, so
+# Installed by local-ai-setup (the Local AI step), as a `comfyui`
+# systemd user service that GIMPhoto starts when it opens
+# and stops when it closes; they find it through that service, so
 # nothing else needs these values. COMFYUI_DIR is where
 # ComfyUI, its Python environment and its models are installed,
 # e.g. a directory on a larger data disk: the models are tens of
@@ -124,8 +127,8 @@ COMFYUI_DIR=""
 #           what comic-skills uses to erase text over art.
 #   klein - FLUX.2 klein 4B, ~12 GB. Faster, lower quality;
 #           the only one that generates images from text.
-#   sam   - SAM 2.1 large, ~450 MB. GIMP's Select > Object
-#           Selection (AI) / Subject (AI).
+#   sam   - SAM 2.1 large, ~450 MB. GIMPhoto's Object
+#           Selection tool.
 #   birefnet - BiRefNet, ~450 MB. Finds the main subject of a
 #           picture: GIMPhoto's Select > Subject.
 #   lama  - Big-LaMa, ~200 MB. Fills in what GIMPhoto's Remove
