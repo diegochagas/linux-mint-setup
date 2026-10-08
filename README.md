@@ -14,7 +14,7 @@ install the OS itself, only what runs on top of it.
 | Resource | Linux Mint's own minimum | Comfortable for this script's full install |
 | --- | --- | --- |
 | RAM | 2 GB (4 GB recommended by Linux Mint) | 8 GB+ (16 GB if you use Docker containers or WinBoat) |
-| Disk (free space) | 20 GB (100 GB recommended by Linux Mint) | 60 GB+ — Snap, Flatpak, Docker images and the GIMP ecosystem all add up |
+| Disk (free space) | 20 GB (100 GB recommended by Linux Mint) | 60 GB+ — Snap, Flatpak, Docker images and GIMPhoto all add up |
 | Display | 1024×768 | — |
 | CPU | x86_64 | x86_64 (AMD64) for the full app set; ARM64 gets a reduced set, see below |
 
@@ -24,11 +24,11 @@ install the OS itself, only what runs on top of it.
   AppManager/Wattage), and the rest install on either. On ARM64 the
   script skips the AMD64-only pieces automatically and says so in its
   summary.
-- Docker, the [GIMP ecosystem](https://github.com/diegochagas/gimp-setup)
+- Docker, [GIMPhoto](https://github.com/diegochagas/gimphoto)
   and WinBoat (a Windows-app compatibility layer) are the heaviest
   consumers of RAM/disk if you actually use them — a machine that skips
   those can get by with less than the "comfortable" numbers above.
-- The [local image models](#local-ai-image-models-comfyui)
+- The [local image models](#local-ai-models-comfyui-and-ollama)
   (ComfyUI) are the heaviest
   download of all: ComfyUI plus the default model sets is about 42 GB on
   disk and needs an NVIDIA GPU. They are skipped unless `COMFYUI_DIR` is
@@ -153,87 +153,41 @@ The script installs Flatpak, adds Flathub, and installs:
 - Telegram Desktop
 - Surfshark
 
-### Local AI Image Models (ComfyUI)
+### Local AI Models (ComfyUI and Ollama)
 
-The AI tools of GIMP ([gimp-setup](https://github.com/diegochagas/gimp-setup)),
-[GIMPhoto](https://github.com/diegochagas/gimphoto) and
-[comic-skills](https://github.com/diegochagas/comic-skills) run on a local
-[ComfyUI](https://github.com/comfyanonymous/ComfyUI) server serving
-open-weight image models, with no accounts, credits or limits. The ComfyUI
-steps (`steps/comfyui/`) install it, before the GIMP ecosystem; they are
-**skipped unless `COMFYUI_DIR` is set** in `config.sh`, because the models
-are tens of GB.
+The local AI models this machine's applications share live in their own
+repository: [local-ai-setup](https://github.com/diegochagas/local-ai-setup).
+The Local AI step clones it and runs its `setup.sh` every time (it is
+idempotent: it skips what is there and resumes interrupted model
+downloads), passing the `COMFYUI_*` and `OLLAMA_*` settings of this
+`config.sh` through the environment.
 
-- Installs ComfyUI in `COMFYUI_DIR` with its own Python virtual environment
-  and PyTorch built for CUDA (`COMFYUI_TORCH_INDEX_URL`, CUDA 12.8 by
-  default). AMD64 only; needs an NVIDIA GPU with the proprietary driver
-  (Driver Manager) and `python3-venv` (in the APT packages).
-- Adds the [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) custom
-  node, which loads quantized models: a 20B editing model then runs on a
-  6 GB card, keeping the rest of its weights in RAM; and the
-  [SAM 2 nodes](https://github.com/kijai/ComfyUI-segment-anything-2)
-  (pinned commit), behind GIMP's and GIMPhoto's AI selections; the
-  [BiRefNet nodes](https://github.com/lldacing/ComfyUI_BiRefNet_ll)
-  (pinned commit), behind GIMPhoto's Select Subject; the
-  [inpaint nodes](https://github.com/Acly/comfyui-inpaint-nodes)
-  (pinned commit), which run LaMa for GIMPhoto's Remove tool; and this
-  setup's own `BBoxFromJSON` node
-  ([`steps/comfyui/custom_nodes`](steps/comfyui/custom_nodes)), which lets
-  apps give SAM 2 box prompts through ComfyUI's HTTP API.
-- Downloads the model sets named in `COMFYUI_MODEL_SETS` (see
-  [`steps/comfyui/models.tsv`](steps/comfyui/models.tsv)), each file
-  verified against the SHA-256 Hugging Face publishes for it (LaMa, published
-  on GitHub: the SHA-256 of the file as downloaded) and marked as
-  verified so later runs do not re-hash it. An interrupted download resumes
-  on the next run.
+- **ComfyUI** with open-weight image models (Qwen-Image-Edit, FLUX.2 klein,
+  SAM 2.1, BiRefNet, LaMa), as the `comfyui` systemd user service, behind
+  GIMPhoto's AI tools, comic-skills and photo-restore. **Skipped unless
+  `COMFYUI_DIR` is set**, because the models are tens of GB (about 42 GB
+  with the default `COMFYUI_MODEL_SETS`); needs an NVIDIA GPU.
+- **Ollama**, the local language-model server, behind
+  [Goose](#local-ai-agent-goose) (the steps after it), comic-skills,
+  tvshow-skills and Digivice. `OLLAMA_MODELS_DIR` moves its models to
+  another disk.
 
-  | Set | Models | Size | Good at |
-  | --- | --- | --- | --- |
-  | `qwen` | Qwen-Image-Edit-2511 (4-bit GGUF) + Qwen2.5-VL text encoder, VAE and the 4-step Lightning LoRA | ~22 GB | Best quality: instruction edits that keep characters and text consistent. ~100 s per 1 MP image on a 6 GB GPU |
-  | `klein` | FLUX.2 klein 4B (fp8) + Qwen3-4B text encoder and VAE | ~12 GB | Three times faster (~35 s), lower quality on detailed art. The only one that also generates images from text |
-  | `sam` | SAM 2.1 large (fp16) | ~450 MB | Segment Anything: Object Selection, ~3 s per selection |
-  | `birefnet` | BiRefNet general | ~450 MB | Finds the main subject of a picture: GIMPhoto's Select Subject, a few seconds |
-  | `lama` | Big-LaMa | ~200 MB | Fills in what is removed (made for object removal): GIMPhoto's Remove tool, about a second |
+See the [local-ai-setup README](https://github.com/diegochagas/local-ai-setup#readme)
+for the model sets, the service and the requirements. The repository can be
+overridden with `LOCAL_AI_SETUP_REPO`.
 
-  All five are installed by default (about 35 GB of models plus 8 GB for
-  ComfyUI and PyTorch, and it wants 45 GB free); name only some to save
-  disk. All are Apache 2.0 or MIT, so they can be used commercially.
-- Writes a `comfyui` **systemd user service** on `127.0.0.1:COMFYUI_PORT`
-  (8188 by default). It is deliberately **not enabled at boot**: it holds
-  GPU memory while it runs. GIMP and GIMPhoto start it when they open and
-  stop it when they close; they find ComfyUI through this service, so they
-  need no setting of their own.
+### GIMPhoto
 
-```bash
-systemctl --user start comfyui     # then open http://127.0.0.1:8188
-systemctl --user stop comfyui      # frees the GPU and the RAM
-systemctl --user status comfyui    # is it running?
-```
+[GIMPhoto](https://github.com/diegochagas/gimphoto), GIMP with Photoshop's
+tools and interface, is installed from the Flatpak bundle of its latest
+GitHub release (`GIMPHOTO_RELEASES_API_URL`), after checking the SHA-256
+GitHub records for it. It installs next to the official GIMP, with its own
+app ID and user profile; Flatpak fetches the GNOME runtime it needs from
+Flathub. Its AI tools run on the local ComfyUI above, which GIMPhoto starts
+when it opens and stops when it closes. AMD64 only.
 
-Scripts can drive it through its HTTP API and start the service themselves,
-as comic-skills does (`INPAINT=qwen COMFYUI_SERVICE=comfyui`).
-
-### GIMP Ecosystem
-
-The complete GIMP ecosystem lives in its own repository:
-[gimp-setup](https://github.com/diegochagas/gimp-setup). Its AI tools run on
-the [local ComfyUI](#local-ai-image-models-comfyui) installed by the steps
-above: gimp-setup finds it through its `comfyui` service, adds its own
-ComfyUI node and makes GIMP start and stop it.
-
-If the GIMP Flatpak is already installed, this step is skipped entirely —
-GIMP itself is the marker for the whole ecosystem — unless a ComfyUI
-installed after GIMP does not have gimp-setup's node yet. To add other
-missing pieces to an existing GIMP install, run the (idempotent)
-`gimp-setup/setup.sh` directly.
-
-Otherwise the script clones that repository and runs its `setup.sh`, which
-installs and configures with a single command the features listed in [gimp-setup/docs/](https://github.com/diegochagas/gimp-setup/tree/main/docs)
-
-The repository to clone can be overridden with the `GIMP_SETUP_REPO` variable
-in `config.sh`. See the
-[gimp-setup README](https://github.com/diegochagas/gimp-setup#readme) for
-details, configuration and how to add new GIMP features.
+Once GIMPhoto is installed the step is skipped: to update it, install a
+newer release's bundle (`flatpak install --user GIMPhoto.flatpak`).
 
 ### Homelab Backup Automation
 
@@ -336,12 +290,10 @@ A free, open-source alternative to Claude Cowork that runs entirely on
 this machine: [Goose](https://github.com/block/goose) as the agent and
 [Ollama](https://ollama.com/) serving a local model.
 
-- Installs Ollama with its official script (AMD64 and ARM64). It uses an
-  NVIDIA GPU when the proprietary driver is installed (Driver Manager);
-  a model larger than the GPU memory is split between GPU and CPU/RAM
-  automatically. `OLLAMA_MODELS_DIR` in `config.sh` moves the model
-  storage to another disk, through its own systemd drop-in
-  (`ollama.service.d/linux-mint-setup.conf`).
+- Ollama comes from the [Local AI step](#local-ai-models-comfyui-and-ollama)
+  (local-ai-setup). It uses an NVIDIA GPU when the proprietary driver is
+  installed (Driver Manager); a model larger than the GPU memory is split
+  between GPU and CPU/RAM automatically.
 - Installs the Goose CLI in `~/.local/bin` with Block's installer
   (AMD64 and ARM64) and, on AMD64, Goose Desktop from its latest `.deb`
   release after checking the SHA-256 GitHub records for it.
@@ -448,8 +400,6 @@ steps/              One setup step (install_* or configure_*) per file
   <name>.sh         A step without extra files
   <name>/<name>.sh  A step that ships files, kept in the same folder:
   antimicrox/       antimicrox.sh and the profiles/ it copies
-  comfyui/          comfyui.sh, the models.tsv it downloads and the
-                    custom_nodes/ it installs into ComfyUI
   fonts/            fonts.sh and the fonts/ it installs
   goose/            goose.sh, goose-config.py (merges Goose's
                     config.yaml) and the goosehints it installs
@@ -485,13 +435,13 @@ resolve them from `${BASH_SOURCE[0]%/*}`, as the fonts step does.
 
 ## Notes
 
-### GIMP
+### GIMPhoto and the official GIMP
 
-- Everything GIMP-related is handled by the
-  [gimp-setup](https://github.com/diegochagas/gimp-setup) repository. See its
-  README for installation details, notes and troubleshooting.
-- If GIMP has not been opened before the setup script runs, some GIMP plug-ins
-  and features are skipped. Open GIMP once, close it, and re-run `setup.sh`.
+- GIMPhoto replaces the official GIMP and its
+  [gimp-setup](https://github.com/diegochagas/gimp-setup) add-ons, which
+  this setup no longer installs. To add Photoshop-style plug-ins to the
+  official GIMP instead, run gimp-setup on its own; its AI plug-ins use the
+  same local ComfyUI.
 - The script downloads software and runs official third-party installation
   scripts, so review `setup.sh` before running it.
 
@@ -580,8 +530,8 @@ repository. Its data backup and restore chain lives in
 - Claude Code is installed with Anthropic's terminal installer. Run `claude`
   once after setup to sign in.
 - Claude Desktop is installed only on AMD64 systems.
-- Goose Desktop is installed only on AMD64 systems; Ollama and the Goose
-  CLI on AMD64 and ARM64. The Goose Desktop package adds
+- Goose Desktop is installed only on AMD64 systems; Ollama (through
+  local-ai-setup) and the Goose CLI on AMD64 and ARM64. The Goose Desktop package adds
   `/usr/bin/goose` as a link to the desktop app, so the setup keeps
   `~/.local/bin` first on the `PATH` and `goose` still runs the CLI.
 - Hypnotix is installed from APT when missing. Its `IPTV-ORG` provider uses the
