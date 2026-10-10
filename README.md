@@ -152,6 +152,7 @@ The script installs Flatpak, adds Flathub, and installs:
 - PPSSPP (PSP emulator)
 - Telegram Desktop
 - Surfshark
+- Birdtray (Thunderbird in the system tray)
 
 ### Local AI Models (ComfyUI and Ollama)
 
@@ -353,6 +354,16 @@ It also:
   images and content load automatically and messages display as original
   HTML. The preferences go in the default profile's `user.js`; if there is no
   profile yet, open Thunderbird once and re-run `setup.sh`.
+- Configures Discord to hide to the system tray when its window is closed. If
+  Discord is running, quit it and re-run `setup.sh` (it rewrites its settings
+  when it quits).
+- Configures Birdtray, since Thunderbird has a system tray of its own only on
+  Windows: Birdtray starts at login, launches Thunderbird hidden and shows the
+  unread count of every account's inbox in the tray. Closing or minimizing the
+  Thunderbird window hides it to the tray (Birdtray restarts it hidden); Quit
+  in the tray icon menu quits both. Needs a Thunderbird profile with at least
+  one account, and Birdtray not running while the step writes its
+  configuration.
 - Configures LocalSend to start automatically, minimized to the system tray.
 - Installs the fonts from `steps/fonts/fonts` into
   `~/.local/share/fonts/linux-mint-setup` and refreshes the font cache with
