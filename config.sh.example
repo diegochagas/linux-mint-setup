@@ -67,6 +67,17 @@ GOOSE_CLI_INSTALL_URL="https://github.com/block/goose/releases/download/stable/d
 GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest"
 
 #
+# MarkSync (bookmark sync between Firefox and Chrome)
+#
+# The extension IDs and where the browsers download it from.
+# Override if the project moves to another store listing.
+#
+MARKSYNC_FIREFOX_ID="marksync-webext@marksync.org"
+MARKSYNC_FIREFOX_XPI_URL="https://addons.mozilla.org/firefox/downloads/latest/marksync/latest.xpi"
+MARKSYNC_CHROME_ID="ajmlmhlkkindginlgpgeeelnimadgckl"
+MARKSYNC_CHROME_UPDATE_URL="https://clients2.google.com/service/update2/crx"
+
+#
 # Ollama models directory
 #
 # Where Ollama stores its models (tens of GB), e.g. a

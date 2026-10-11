@@ -76,6 +76,13 @@ Weekly - Keep 4 > Next > Next > Finish`.
 4. Optional: to let Goose read email, add an IMAP account with
    `npx -p imap-mcp-server imap-setup`, then turn on the IMAP Email
    extension in Goose when you need it (see [Local AI Agent](#local-ai-agent-goose)).
+5. Restart Firefox and Chrome, then set up the bookmark sync (see
+   [Bookmark Sync](#bookmark-sync-marksync)). On the first machine, click the
+   MarkSync icon in Firefox, create a new sync and choose a password. Save the
+   sync ID it shows and the password in your password manager: the password
+   encrypts the bookmarks and cannot be recovered. In Chrome, choose the
+   existing sync and enter the same ID and password. On a new machine, join
+   with that ID and password in both browsers.
 
 ## What `setup.sh` Does
 
@@ -331,6 +338,34 @@ shell, web search and simple browser tasks, weak at complex websites.
 `browser_execute_js` is blocked on sites with a strict
 Content-Security-Policy (GitHub, Gmail), and a small model may guess
 instead of saying it could not read something, so check its facts.
+
+### Bookmark Sync (MarkSync)
+
+Keeps the bookmarks of Firefox and Chrome the same, in both directions, with
+[MarkSync](https://marksync.org/). It is the Manifest V3 successor of
+xBrowserSync, whose Chrome extension can no longer be installed, and it uses
+the same sync service and sync IDs. Bookmarks are encrypted on the machine
+with your password before they are uploaded.
+
+- Installs the extension in Firefox and in Chrome (the `.deb` or the Flatpak
+  version) through each browser's policy file, as an extension the browser
+  installs automatically but that you can still disable:
+  - Firefox: `/usr/lib/firefox/distribution/policies.json`.
+  - Chrome: `/etc/opt/chrome/policies/managed/linux-mint-setup.json`. The
+    Flatpak version reads the same file from the host.
+- Merges its entry into those files, so other policies already there are kept,
+  and leaves a file alone when it is not valid JSON. It runs again without
+  changing anything once the entries are there.
+- Takes effect the next time each browser starts. Firefox and Chrome then
+  show "managed by your organization" in their settings, which is how they
+  display any policy file.
+- Creating the sync, or joining the one made on another machine, needs a
+  password, so it is a [manual step](#step-2---manual-post-install-steps)
+  and the password is never stored by the setup.
+
+The extension IDs and download URLs can be overridden in `config.sh`
+(`MARKSYNC_*`). Firefox must come from APT, as it does in this setup; the
+Snap version ignores that policy file.
 
 ### Desktop Configuration
 
