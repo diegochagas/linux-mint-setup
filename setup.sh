@@ -66,9 +66,11 @@ source "$SCRIPT_DIR/steps/flatpak-packages.sh"
 source "$SCRIPT_DIR/steps/local-ai.sh"
 source "$SCRIPT_DIR/steps/gimphoto.sh"
 source "$SCRIPT_DIR/steps/blender.sh"
+source "$SCRIPT_DIR/steps/calibre/calibre.sh"
+source "$SCRIPT_DIR/steps/calibre/kindle-dedrm-workspace.sh"
 source "$SCRIPT_DIR/steps/tailscale.sh"
-source "$SCRIPT_DIR/steps/claude-code.sh"
-source "$SCRIPT_DIR/steps/claude-desktop.sh"
+source "$SCRIPT_DIR/steps/claude/claude-code.sh"
+source "$SCRIPT_DIR/steps/claude/claude-desktop.sh"
 source "$SCRIPT_DIR/steps/discord.sh"
 source "$SCRIPT_DIR/steps/goose/goose.sh"
 source "$SCRIPT_DIR/steps/hypnotix.sh"
@@ -160,6 +162,8 @@ run_setup_steps() {
     run_step install   "Local AI"            install_local_ai
     run_step install   "GIMPhoto"            install_gimphoto
     run_step install   "Blender"             install_blender
+    run_step install   "calibre"             install_calibre
+    run_step configure "Kindle workspace"    configure_kindle_dedrm_workspace
     run_step install   "Tailscale"           install_tailscale
     run_step install   "Claude Code"         install_claude_code
     run_step install   "Claude Desktop"      install_claude_desktop

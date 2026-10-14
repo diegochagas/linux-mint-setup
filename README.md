@@ -257,6 +257,16 @@ repository on a home server:
 ### Other Software
 
 - Installs Tailscale using its official installation script.
+- On AMD64 and ARM64 systems, installs [calibre](https://calibre-ebook.com/download_linux)
+  with its official installer to `/opt/calibre` (the apt package is several
+  major versions behind).
+- Creates the `~/Kindle-DeDRM` workspace (or `KINDLE_DEDRM_DIR` from
+  `config.sh`) with `tools/`, `output/`, and `backup/` subdirectories. The
+  folder is deliberately not shared automatically: expose it to the Windows
+  guest only through WinBoat's supported shared-folder configuration.
+- If `KINDLE_DEDRM_BACKUP_DIR` is set, copies the known account-derived Kindle
+  key files (`oldbooks.k4i`, `books.keyfile`, and `storage/.kinf2024`) there
+  with mode `0600`. The backup directory itself is mode `0700`.
 - Installs [`immich-go`](https://github.com/simulot/immich-go) to
   `/usr/local/bin/immich-go` on AMD64 and ARM64 systems.
 - Installs the [Blender](https://www.blender.org/download/lts/) LTS portable
@@ -291,6 +301,21 @@ repository on a home server:
 
 Installer and release source URLs, including the WinBoat AppImage URL, can also
 be overridden in `config.sh`. See `config.sh.example` for the full list.
+
+### Kindle purchases and WinBoat
+
+This setup installs the Linux-side prerequisites—Calibre, WinBoat, and a
+private host workspace—but it does not automate Amazon sign-in, Microsoft
+Store installation, TPM configuration, Windows executables, DeDRM plugin
+installation, or ebook conversion. Those operations depend on the installed
+Kindle app and WinBoat version, expose account-derived key material, and need
+interactive verification.
+
+For purchased or otherwise authorized books, follow the companion
+[Kindle DRM workflow](https://github.com/diegochagas/kindle-drm-workflow).
+It adapts Fabio Akita's 2026 process for a Linux Mint host using WinBoat,
+including the version-matching and secure-backup checks. Do not use the
+Omarchy-specific commands or paths from the original post with WinBoat.
 
 ### Local AI Agent (Goose)
 
@@ -563,6 +588,8 @@ repository. Its data backup and restore chain lives in
 - `immich-go` is installed only on AMD64 and ARM64 systems.
 - Blender is installed only on AMD64 systems (the official portable build has
   no ARM64 Linux release).
+- calibre is installed only on AMD64 and ARM64 systems. Remove it with
+  `calibre-uninstall`.
 - LocalSend is installed only on AMD64 and ARM64 systems, from its official
   `.deb` release rather than the Snap Store, and any existing Snap install is
   removed first.

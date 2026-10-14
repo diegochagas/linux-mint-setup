@@ -57,6 +57,7 @@ WATTAGE_NIGHTLY_BASE_URL="https://nightly.link/v81d/wattage/workflows/build-appi
 WINBOAT_APPIMAGE_URL="https://github.com/TibixDev/winboat/releases/download/v0.9.0/winboat-0.9.0-x86_64.AppImage"
 BLENDER_VERSION="4.2.3"
 BLENDER_TARBALL_URL="https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz"
+CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 TAILSCALE_INSTALL_URL="https://tailscale.com/install.sh"
 CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
@@ -65,6 +66,23 @@ OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
 GIMPHOTO_RELEASES_API_URL="https://api.github.com/repos/diegochagas/gimphoto/releases/latest"
 GOOSE_CLI_INSTALL_URL="https://github.com/block/goose/releases/download/stable/download_cli.sh"
 GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest"
+
+#
+# Kindle/Calibre workspace
+#
+# Private host directory for the manual Kindle backup workflow. The setup
+# creates tools/, output/ and backup/ with mode 0700. Share it with the
+# Windows guest through WinBoat itself; do not point this at WinBoat's data
+# directory or commit its contents to Git.
+#
+KINDLE_DEDRM_DIR="$HOME/Kindle-DeDRM"
+
+# Optional private backup destination for the account-derived Kindle key files.
+# When set, the workspace step copies oldbooks.k4i, books.keyfile and
+# storage/.kinf2024 when present, using mode 0600. Keep this outside Git and
+# use encrypted storage if the sync provider is not already end-to-end encrypted.
+# Leave empty to skip automatic backup.
+KINDLE_DEDRM_BACKUP_DIR=""
 
 #
 # MarkSync (bookmark sync between Firefox and Chrome)
