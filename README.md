@@ -59,6 +59,15 @@ To change any of the configurable values first, copy `config.sh.example` to
 `./setup.sh --dry-run` prints every action the script would take without
 changing anything.
 
+### Set your machine's paths
+
+`config.sh.example` is portable; its paths are examples, not paths to copy
+unchanged. Before running the setup, set each data location for your own
+machine. Put ordinary data and non-secret configuration in visible locations
+on your data volume (for example, `/path/to/data/...`). Reserve a credentials
+directory and restrictive permissions for actual secrets, such as the Kindle
+key backup. `config.sh` remains local and is not committed.
+
 The script asks for the administrator password when it needs `sudo`
 permissions. Keep an internet connection active while it runs. Each run
 writes a log to the `logs/` folder.
@@ -228,8 +237,11 @@ variable in `config.sh`. The clone location remains
 After the Homelab Backup step, the script adds each file listed in
 `GIT_CONFIG_INCLUDES` in `config.sh` (comma separated) to the global Git
 configuration with `git config --global --add include.path`. Use it for Git
-settings that must not be committed anywhere, such as per-repository push URLs
-kept in a folder synced by Nextcloud. Because the include lives in
+settings that should not be committed to a repository, such as per-repository
+push URLs kept in a regular Nextcloud-synced configuration folder. Such a file
+does not inherently contain a secret: use a visible data path such as
+`/path/to/nextcloud/Documents/Git`, and reserve `Credentials` for genuine
+secret material. Because the include lives in
 `~/.gitconfig` rather than in a repository, it still applies after a project is
 deleted and cloned again.
 
