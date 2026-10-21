@@ -96,6 +96,23 @@ MARKSYNC_CHROME_ID="ajmlmhlkkindginlgpgeeelnimadgckl"
 MARKSYNC_CHROME_UPDATE_URL="https://clients2.google.com/service/update2/crx"
 
 #
+# Swing Music
+#
+# Self-hosted music player, installed from its official
+# release binary (checksum-verified) and run as a user
+# service on http://127.0.0.1:SWINGMUSIC_PORT.
+#
+# SWINGMUSIC_MUSIC_DIRS is the comma-separated list of
+# library folders, e.g. the folder homelab-monitor's
+# liked-music sync downloads into. Folder watching is
+# turned on, so new files appear without a rescan. Leave
+# empty to pick the folders in Swing Music's settings.
+#
+SWINGMUSIC_RELEASES_API_URL="https://api.github.com/repos/swingmx/swingmusic/releases/latest"
+SWINGMUSIC_PORT="1970"
+SWINGMUSIC_MUSIC_DIRS=""
+
+#
 # Ollama models directory
 #
 # Where Ollama stores its models (tens of GB), e.g. a

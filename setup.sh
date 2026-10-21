@@ -80,6 +80,7 @@ source "$SCRIPT_DIR/steps/copyq.sh"
 source "$SCRIPT_DIR/steps/thunderbird.sh"
 source "$SCRIPT_DIR/steps/birdtray.sh"
 source "$SCRIPT_DIR/steps/marksync.sh"
+source "$SCRIPT_DIR/steps/swingmusic.sh"
 source "$SCRIPT_DIR/steps/fonts/fonts.sh"
 source "$SCRIPT_DIR/steps/antimicrox/antimicrox.sh"
 source "$SCRIPT_DIR/steps/easyrpg.sh"
@@ -173,6 +174,7 @@ run_setup_steps() {
     run_step configure "Goose Local Model"   configure_goose_model
     run_step configure "Goose"               configure_goose
     run_step install   "Hypnotix"            install_hypnotix
+    run_step install   "Swing Music"         install_swingmusic
     run_step configure "Keyboard Shortcuts"  configure_keyboard_shortcuts
     run_step configure "XCompose"            configure_xcompose
     run_step configure "CopyQ"               configure_copyq
@@ -180,6 +182,7 @@ run_setup_steps() {
     run_step configure "Thunderbird"         configure_thunderbird
     run_step configure "Birdtray"            configure_birdtray
     run_step configure "MarkSync Bookmark Sync" configure_marksync
+    run_step configure "Swing Music"         configure_swingmusic
     run_step configure "LocalSend Autostart" configure_localsend_autostart
     run_step configure "Remote Mouse Launchers" configure_remote_mouse_launchers
     run_step configure "Fonts"               configure_fonts

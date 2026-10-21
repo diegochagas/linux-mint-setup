@@ -83,6 +83,10 @@ Weekly - Keep 4 > Next > Next > Finish`.
    encrypts the bookmarks and cannot be recovered. In Chrome, choose the
    existing sync and enter the same ID and password. On a new machine, join
    with that ID and password in both browsers.
+6. Open Swing Music from the menu (or http://127.0.0.1:1970) and create your
+   account: the first account becomes the admin and needs a password, so the
+   setup never creates it. Playlists are made in the app (see
+   [Music Player](#music-player-swing-music)).
 
 ## What `setup.sh` Does
 
@@ -391,6 +395,30 @@ with your password before they are uploaded.
 The extension IDs and download URLs can be overridden in `config.sh`
 (`MARKSYNC_*`). Firefox must come from APT, as it does in this setup; the
 Snap version ignores that policy file.
+
+### Music Player (Swing Music)
+
+Installs [Swing Music](https://github.com/swingmx/swingmusic), a self-hosted
+player for the local music library, for example the YouTube Music likes that
+[homelab-monitor](https://github.com/diegochagas/homelab-monitor)'s
+liked-music sync downloads.
+
+- Downloads the standalone binary from the latest official release (AMD64 or
+  ARM64) and installs it to `~/.local/bin/swingmusic` only when its SHA-256
+  matches the digest GitHub records for the asset.
+- Runs it as the systemd user service `swingmusic.service`, bound to
+  `127.0.0.1:SWINGMUSIC_PORT` (default 1970) so only this computer reaches
+  it, and adds a "Swing Music" menu entry that opens it in the browser.
+- Sets the library to the folders in `SWINGMUSIC_MUSIC_DIRS` and turns on
+  folder watching, so new files appear without a rescan. Swing Music writes
+  its `settings.json` on the first start, so the step starts the service
+  once, then stops it while it changes the file. Other settings are kept.
+- Runs again without changing anything once it is configured.
+- The admin account and the playlists stay a
+  [manual step](#step-2---manual-post-install-steps).
+
+Data, settings and playlists live in `~/.config/swingmusic`. Logs:
+`journalctl --user -u swingmusic`.
 
 ### Desktop Configuration
 
