@@ -30,9 +30,12 @@ HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 # Comma-separated list of Git config files added to the
 # global configuration (include.path in ~/.gitconfig),
 # e.g. files in a folder synced by Nextcloud that hold
-# per-repository settings such as extra push URLs. A file
-# that does not exist yet is picked up by Git once it
-# appears. Use ~ for the home directory.
+# per-repository settings such as extra push URLs. These
+# settings are not necessarily secrets: use a regular,
+# visible data directory (for example
+# /path/to/nextcloud/Documents/Git) unless the file holds
+# credentials. A file that does not exist yet is picked up
+# by Git once it appears.
 #
 # Leave empty to skip the Git config includes step.
 #
