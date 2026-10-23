@@ -18,6 +18,7 @@ APT_PACKAGES=(
     btop
     copyq
     curl
+    ddcutil
     docker-compose-v2
     docker.io
     ffmpeg
