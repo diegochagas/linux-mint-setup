@@ -25,6 +25,31 @@ LOCAL_AI_SETUP_REPO="https://github.com/diegochagas/local-ai-setup.git"
 HOMELAB_BACKUP_REPO="https://github.com/diegochagas/homelab-backup.git"
 
 #
+# Auto brightness
+#
+# Cloned to ~/Projects/auto-brightness and installed as a
+# systemd user service that sets the laptop panel and any
+# DDC/CI monitor from the webcam's light reading. Skipped
+# on machines without a backlight or a webcam.
+#
+AUTO_BRIGHTNESS_REPO="https://github.com/diegochagas/auto-brightness.git"
+
+#
+# Your tuned auto-brightness config.toml (curve, per-screen
+# scales and offsets, monitor names with their serial
+# numbers), kept outside Git, e.g. in a folder synced by
+# Nextcloud: /path/to/nextcloud/Documents/Credentials/auto-brightness__config.toml
+# It is copied to ~/.config/auto-brightness/config.toml
+# when that file does not exist yet. If it is set but not
+# synced yet, the step stops and asks you to run the setup
+# again later.
+#
+# Leave empty to let auto-brightness detect the webcam and
+# backlight and write its defaults.
+#
+AUTO_BRIGHTNESS_CONFIG_FILE=""
+
+#
 # Git config includes
 #
 # Comma-separated list of Git config files added to the

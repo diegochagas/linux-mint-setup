@@ -85,6 +85,7 @@ source "$SCRIPT_DIR/steps/antimicrox/antimicrox.sh"
 source "$SCRIPT_DIR/steps/easyrpg.sh"
 source "$SCRIPT_DIR/steps/update-manager.sh"
 source "$SCRIPT_DIR/steps/homelab-backup.sh"
+source "$SCRIPT_DIR/steps/auto-brightness.sh"
 source "$SCRIPT_DIR/steps/git-config-includes.sh"
 
 trap 'handle_error $? "${BASH_SOURCE[0]}" $LINENO "$BASH_COMMAND"' ERR
@@ -188,6 +189,7 @@ run_setup_steps() {
     run_step configure "Update Manager"      configure_update_manager
     run_step configure "Hypnotix IPTV-ORG"   configure_hypnotix_provider
     run_step configure "Homelab Backup"      configure_homelab_backup
+    run_step configure "Auto Brightness"     configure_auto_brightness
     run_step configure "Git Config Includes" configure_git_config_includes
 }
 

@@ -107,7 +107,8 @@ actions:
   unrar, unzip, rsync, xclip, FreeRDP X11, libsecret-tools, CopyQ, btop, Inkscape,
   Nextcloud Desktop, FFmpeg, fontconfig, GParted, Tree, ShellCheck, Docker,
   Docker Compose, gh, nfs-kernel-server, zbar-tools, Anki, the TimGM6mb
-  SoundFont, and supporting libraries.
+  SoundFont, ddcutil (external monitor brightness for Auto Brightness), and
+  supporting libraries.
 - Configures Docker after installation by adding the current user to the
   `docker` group, fixing existing `~/.docker` ownership if needed, and enabling
   and starting the Docker and containerd systemd services. Log out and back in
@@ -232,9 +233,29 @@ The repository to clone can be overridden with the `HOMELAB_BACKUP_REPO`
 variable in `config.sh`. The clone location remains
 `~/Projects/homelab-backup`, matching the systemd unit configuration.
 
+### Auto Brightness
+
+After the Homelab Backup step, on machines with a backlight and a webcam (laptops),
+the script installs [auto-brightness](https://github.com/diegochagas/auto-brightness),
+phone-style adaptive brightness that uses the webcam as the light sensor:
+
+- Clones it to `~/Projects/auto-brightness` (an existing clone is fast-forwarded).
+- Copies `AUTO_BRIGHTNESS_CONFIG_FILE` (set in `config.sh`, e.g. a copy kept in
+  Nextcloud) to `~/.config/auto-brightness/config.toml`. When it is empty,
+  auto-brightness detects the webcam and backlight and writes its defaults. An
+  existing config is never overwritten, and if the copy is set but not synced
+  yet the step stops and asks you to run the setup again later.
+- Loads `i2c-dev` and re-runs ddcutil's udev rule, so monitors work without a reboot.
+- Installs and starts its `auto-brightness` systemd user service (again when the
+  clone got new code).
+
+The laptop panel is set through systemd-logind and monitors on HDMI/DisplayPort
+over DDC/CI with `ddcutil`, so nothing runs as root. Tuning (curve, per-screen
+scales, contrast range) lives in the config; see the auto-brightness README.
+
 ### Git Config Includes
 
-After the Homelab Backup step, the script adds each file listed in
+After the Auto Brightness step, the script adds each file listed in
 `GIT_CONFIG_INCLUDES` in `config.sh` (comma separated) to the global Git
 configuration with `git config --global --add include.path`. Use it for Git
 settings that should not be committed to a repository, such as per-repository
