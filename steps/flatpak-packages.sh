@@ -7,7 +7,6 @@ FLATPAK_PACKAGES=(
     com.github.dynobo.normcap
     com.google.Chrome
     xyz.riothedev.emojify
-    net.code_industry.MasterPDFEditor
     org.kde.kdenlive
     com.obsproject.Studio
     org.freedownloadmanager.Manager

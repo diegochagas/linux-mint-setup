@@ -63,6 +63,7 @@ source "$SCRIPT_DIR/steps/wattage.sh"
 source "$SCRIPT_DIR/steps/winboat.sh"
 source "$SCRIPT_DIR/steps/snap-packages.sh"
 source "$SCRIPT_DIR/steps/flatpak-packages.sh"
+source "$SCRIPT_DIR/steps/pdfcraft.sh"
 source "$SCRIPT_DIR/steps/local-ai.sh"
 source "$SCRIPT_DIR/steps/gimphoto.sh"
 source "$SCRIPT_DIR/steps/blender.sh"
@@ -160,6 +161,7 @@ run_setup_steps() {
     run_step install   "WinBoat"             install_winboat
     run_step install   "Snap Packages"       install_snap_packages
     run_step install   "Flatpak Packages"    install_flatpak_packages
+    run_step install   "PdfCraft"            install_pdfcraft
     run_step install   "Local AI"            install_local_ai
     run_step install   "GIMPhoto"            install_gimphoto
     run_step install   "Blender"             install_blender

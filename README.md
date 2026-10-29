@@ -160,7 +160,6 @@ The script installs Flatpak, adds Flathub, and installs:
 - NormCap
 - Google Chrome
 - Emojify
-- Master PDF Editor
 - Kdenlive
 - OBS Studio
 - Free Download Manager
@@ -170,6 +169,17 @@ The script installs Flatpak, adds Flathub, and installs:
 - Telegram Desktop
 - Surfshark
 - Birdtray (Thunderbird in the system tray)
+
+### PdfCraft
+
+[PdfCraft](https://github.com/storytold/pdfcraft), a PDF workbench that
+replaces Master PDF Editor, is installed for the user from the Flatpak
+bundle of its latest GitHub release (`PDFCRAFT_RELEASES_API_URL`), after
+checking it against the release's `SHA256SUMS.txt`. Flatpak fetches the
+runtime it needs from Flathub. AMD64 and ARM64.
+
+Once PdfCraft is installed the step is skipped: to update it, install a
+newer release's bundle (`flatpak install --user pdfcraft-<version>-linux-<arch>.flatpak`).
 
 ### Local AI Models (ComfyUI and Ollama)
 
