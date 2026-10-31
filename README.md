@@ -139,6 +139,9 @@ actions:
   release using AppManager.
 - Installs [Claude Code](https://code.claude.com/docs/en/terminal-guide) for
   terminal use.
+- Installs [ai-memory](https://github.com/akitaonrails/ai-memory), long-term
+  memory shared by the AI coding agents on the machine, and wires it into
+  every agent it detects (see [AI Agent Memory](#ai-agent-memory-ai-memory)).
 - On AMD64 systems, installs Claude Desktop from Anthropic's latest x64 `.deb`
   installer.
 - On AMD64 systems, installs Discord from Discord's official Linux `.deb`
@@ -337,6 +340,12 @@ repository on a home server:
   downloading Anthropic's latest x64 `.deb` installer and installing it with
   APT. The installer registers Anthropic's APT repository so Claude Desktop
   updates with the rest of the system packages.
+- Installs [ai-memory](https://github.com/akitaonrails/ai-memory) with its
+  release installer, which verifies the binary's checksum and links it as
+  `~/.local/bin/ai-memory`:
+  ```bash
+  curl -fsSL https://github.com/akitaonrails/ai-memory/releases/latest/download/install.sh | sh
+  ```
 - Installs [Discord](https://discord.com/download) on AMD64 systems from its
   official `.deb` download.
 - Installs the latest Scrcpy GUI AMD64 `.deb` release after validating it
@@ -406,6 +415,48 @@ shell, web search and simple browser tasks, weak at complex websites.
 `browser_execute_js` is blocked on sites with a strict
 Content-Security-Policy (GitHub, Gmail), and a small model may guess
 instead of saying it could not read something, so check its facts.
+
+### AI Agent Memory (ai-memory)
+
+[ai-memory](https://github.com/akitaonrails/ai-memory), by Fabio Akita, gives
+the AI coding agents on the machine a long-term memory that survives the end
+of a session and is shared between agents. Lifecycle hooks record prompts,
+tool calls and session boundaries; when a session ends, a local server turns
+them into markdown wiki pages about the project, and the next session, in
+any wired agent, starts with a short briefing and can search that memory
+through MCP tools. It also supports explicit handoffs from one agent to
+another. The default mode makes no LLM calls, so it needs no API key.
+
+The setup runs it in two steps:
+
+- **Install** runs the release installer, which downloads the binary for the
+  current architecture, verifies it against the release's published SHA-256
+  file, unpacks it under `~/.local/lib/ai-memory` and links
+  `~/.local/bin/ai-memory`. An existing release is replaced in place, so the
+  step also upgrades ai-memory on later runs.
+- **Configure** runs `ai-memory setup --yes` after the agent CLIs are
+  installed. It creates the data directory under `~/.local/share/ai-memory`
+  (`wiki/`, `raw/`, `db/`, `logs/` and the config file), installs and starts a
+  `systemd --user` service for the memory server, and wires hooks, MCP and
+  skills into every agent it detects under `$HOME` — Claude Code, Codex,
+  Gemini CLI, Copilot CLI and so on. Each agent config it touches gets a
+  timestamped backup beside it. Re-running the step changes nothing. Set
+  `AI_MEMORY_AGENTS` in `config.sh` to wire a fixed list of agents instead
+  of the detected ones.
+
+Useful commands afterwards:
+
+```bash
+ai-memory doctor          # checks the service, hooks and MCP wiring
+ai-memory setup --plan    # shows which agents would be wired, and why
+ai-memory search "query"  # searches the memory from the terminal
+ai-memory uninstall --apply
+```
+
+Hermes keeps its hooks in a YAML file ai-memory does not write; for it the
+setup prints a ready-to-paste block to add to `~/.hermes/config.yaml`.
+Project-specific routing (monorepos, worktrees) is an optional
+`.ai-memory.toml` in the repository; ordinary repositories need nothing.
 
 ### Bookmark Sync (MarkSync)
 
@@ -646,6 +697,10 @@ repository. Its data backup and restore chain lives in
 - Claude Code is installed with Anthropic's terminal installer. Run `claude`
   once after setup to sign in.
 - Claude Desktop is installed only on AMD64 systems.
+- ai-memory wires the agents it finds under `$HOME` when the setup runs.
+  Agents installed later are wired on the next run of the setup, or with
+  `ai-memory setup --yes`. Restart an agent's open sessions after wiring so
+  they load the new hooks.
 - Goose Desktop is installed only on AMD64 systems; Ollama (through
   local-ai-setup) and the Goose CLI on AMD64 and ARM64. The Goose Desktop package adds
   `/usr/bin/goose` as a link to the desktop app, so the setup keeps

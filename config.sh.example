@@ -89,6 +89,7 @@ CALIBRE_INSTALLER_URL="https://download.calibre-ebook.com/linux-installer.sh"
 TAILSCALE_INSTALL_URL="https://tailscale.com/install.sh"
 CLAUDE_CODE_INSTALL_URL="https://claude.ai/install.sh"
 CLAUDE_DESKTOP_DEB_URL="https://claude.ai/api/desktop/linux/x64/deb/latest/redirect"
+AI_MEMORY_INSTALL_URL="https://github.com/akitaonrails/ai-memory/releases/latest/download/install.sh"
 DISCORD_DEB_URL="https://discord.com/api/download?platform=linux&format=deb"
 OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
 GIMPHOTO_RELEASES_API_URL="https://api.github.com/repos/diegochagas/gimphoto/releases/latest"
@@ -122,6 +123,17 @@ MARKSYNC_FIREFOX_ID="marksync-webext@marksync.org"
 MARKSYNC_FIREFOX_XPI_URL="https://addons.mozilla.org/firefox/downloads/latest/marksync/latest.xpi"
 MARKSYNC_CHROME_ID="ajmlmhlkkindginlgpgeeelnimadgckl"
 MARKSYNC_CHROME_UPDATE_URL="https://clients2.google.com/service/update2/crx"
+
+#
+# ai-memory agents
+#
+# Space-separated list of agents for `ai-memory setup` to
+# wire with hooks and MCP, as `ai-memory setup --help`
+# names them (claude-code, codex, gemini-cli, copilot-cli,
+# hermes, ...). Leave empty to wire every agent ai-memory
+# detects under $HOME, which is the usual choice.
+#
+AI_MEMORY_AGENTS=""
 
 #
 # Ollama models directory
