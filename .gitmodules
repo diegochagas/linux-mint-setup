@@ -1,0 +1,3 @@
+[submodule "homelab-monitor"]
+	path = homelab-monitor
+	url = https://github.com/diegochagas/homelab-monitor.git
