@@ -51,8 +51,13 @@ curl -fsSL https://github.com/diegochagas/linux-mint-setup/archive/refs/heads/ma
 Or, with Git:
 
 ```bash
-git clone https://github.com/diegochagas/linux-mint-setup.git && cd linux-mint-setup && ./setup.sh
+git clone --recurse-submodules https://github.com/diegochagas/linux-mint-setup.git && cd linux-mint-setup && ./setup.sh
 ```
+
+`--recurse-submodules` also checks out
+[homelab-monitor](https://github.com/diegochagas/homelab-monitor), tracked
+as a submodule; the setup itself does not need it. In an existing clone, run
+`git submodule update --init` to fetch it.
 
 To change any of the configurable values first, copy `config.sh.example` to
 `config.sh` next to `setup.sh` and edit it before running the script.
@@ -552,6 +557,8 @@ It also:
 setup.sh            Entry point: loads config.sh, lib/ and steps/, then runs
                     the steps in the order listed in run_setup_steps
 config.sh.example   Template for the optional config.sh
+homelab-monitor/    Submodule: the homelab-monitor Telegram bot repository,
+                    pinned to a commit; not used by setup.sh
 lib/
   log.sh            Terminal output and the log file
   exec.sh           run (dry-run aware), downloads, file writes, temporary
