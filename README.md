@@ -177,6 +177,19 @@ The script installs Flatpak, adds Flathub, and installs:
 - Telegram Desktop
 - Surfshark
 - Birdtray (Thunderbird in the system tray)
+- Strawberry (music player for the synced YouTube Music library, see Syncthing below)
+
+### Syncthing (music library)
+
+[Syncthing](https://syncthing.net/) is installed from its latest official
+release tarball into `~/.local/opt/syncthing` (checked against the release's
+`sha256sum.txt.asc`; no sudo, and it updates itself) and runs as the
+`syncthing` systemd user service, web UI at `http://127.0.0.1:8384`. It keeps
+a receive-only copy of the music library the home server shares (songs,
+lyrics and `.m3u8` playlists; see zimaos-setup's README, "Music Library
+Sync"). Pairing the server and accepting its folder is a one-time step per
+machine in that UI, so it is not scripted. Strawberry (Flatpak, above) plays
+the copy; the `.m3u8` files open as playlists.
 
 ### PdfCraft
 

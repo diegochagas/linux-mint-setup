@@ -16,6 +16,7 @@ FLATPAK_PACKAGES=(
     org.telegram.desktop
     com.surfshark.Surfshark
     com.ulduzsoft.Birdtray
+    org.strawberrymusicplayer.strawberry
 )
 
 install_flatpak_packages() {
