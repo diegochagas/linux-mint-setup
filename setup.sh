@@ -87,6 +87,7 @@ source "$SCRIPT_DIR/steps/antimicrox/antimicrox.sh"
 source "$SCRIPT_DIR/steps/easyrpg.sh"
 source "$SCRIPT_DIR/steps/update-manager.sh"
 source "$SCRIPT_DIR/steps/homelab-backup.sh"
+source "$SCRIPT_DIR/steps/syncthing.sh"
 source "$SCRIPT_DIR/steps/auto-brightness.sh"
 source "$SCRIPT_DIR/steps/git-config-includes.sh"
 
@@ -162,6 +163,7 @@ run_setup_steps() {
     run_step install   "WinBoat"             install_winboat
     run_step install   "Snap Packages"       install_snap_packages
     run_step install   "Flatpak Packages"    install_flatpak_packages
+    run_step install   "Syncthing"           install_syncthing
     run_step install   "PdfCraft"            install_pdfcraft
     run_step install   "Local AI"            install_local_ai
     run_step install   "GIMPhoto"            install_gimphoto
