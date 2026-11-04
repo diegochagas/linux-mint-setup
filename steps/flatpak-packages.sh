@@ -15,7 +15,6 @@ FLATPAK_PACKAGES=(
     org.ppsspp.PPSSPP
     org.telegram.desktop
     com.surfshark.Surfshark
-    com.ulduzsoft.Birdtray
     org.strawberrymusicplayer.strawberry
 )
 
