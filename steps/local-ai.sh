@@ -9,9 +9,8 @@
 #   service: GIMPhoto, comic-skills and photo-restore find
 #   it through that service. Skipped unless COMFYUI_DIR is
 #   set, because the models are tens of GB.
-# - Ollama, the local language-model server: Goose (the
-#   steps after this one), comic-skills, tvshow-skills and
-#   Digivice.
+# - Ollama, the local language-model server: comic-skills,
+#   tvshow-skills, games-extractor and Digivice.
 #
 # The repository is cloned and its setup.sh run with the
 # COMFYUI_* and OLLAMA_* settings of this setup's config.sh
