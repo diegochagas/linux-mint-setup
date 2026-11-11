@@ -93,8 +93,6 @@ AI_MEMORY_INSTALL_URL="https://github.com/akitaonrails/ai-memory/releases/latest
 DISCORD_DEB_URL="https://discord.com/api/download?platform=linux&format=deb"
 OLLAMA_INSTALL_URL="https://ollama.com/install.sh"
 GIMPHOTO_RELEASES_API_URL="https://api.github.com/repos/diegochagas/gimphoto/releases/latest"
-GOOSE_CLI_INSTALL_URL="https://github.com/block/goose/releases/download/stable/download_cli.sh"
-GOOSE_RELEASES_API_URL="https://api.github.com/repos/block/goose/releases/latest"
 
 #
 # Kindle/Calibre workspace
@@ -148,28 +146,19 @@ AI_MEMORY_AGENTS=""
 OLLAMA_MODELS_DIR=""
 
 #
-# Goose local model
+# Translation model for games-extractor
 #
-# GOOSE_OLLAMA_BASE_MODEL is pulled from the Ollama
-# library and copied as GOOSE_OLLAMA_MODEL with a
-# GOOSE_OLLAMA_CONTEXT-token context, which Goose uses.
+# TRANSLATION_MODEL_BASE is pulled from the Ollama
+# library and copied as TRANSLATION_MODEL_NAME with a
+# TRANSLATION_MODEL_CONTEXT-token context, which
+# games-extractor uses by default.
 # The default base model needs about 24 GB of RAM (GPU
 # memory counts toward it); on smaller machines use e.g.
 # qwen3:8b with a 16384 context.
 #
-GOOSE_OLLAMA_BASE_MODEL="qwen3:30b-a3b-instruct-2507-q4_K_M"
-GOOSE_OLLAMA_MODEL="qwen3-instruct-32k"
-GOOSE_OLLAMA_CONTEXT="32768"
-
-#
-# SearXNG instance for Goose web search
-#
-# Base URL of a SearXNG instance with the JSON output
-# format enabled, used by Goose's SearXNG extension.
-#
-# Leave empty to skip the SearXNG extension.
-#
-GOOSE_SEARXNG_URL=""
+TRANSLATION_MODEL_BASE="qwen3:30b-a3b-instruct-2507-q4_K_M"
+TRANSLATION_MODEL_NAME="qwen3-instruct-32k"
+TRANSLATION_MODEL_CONTEXT="32768"
 
 #
 # ComfyUI, the local AI models behind the AI tools of GIMPhoto,

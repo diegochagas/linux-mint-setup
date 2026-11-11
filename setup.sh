@@ -74,7 +74,7 @@ source "$SCRIPT_DIR/steps/claude/claude-code.sh"
 source "$SCRIPT_DIR/steps/claude/claude-desktop.sh"
 source "$SCRIPT_DIR/steps/ai-memory.sh"
 source "$SCRIPT_DIR/steps/discord.sh"
-source "$SCRIPT_DIR/steps/goose/goose.sh"
+source "$SCRIPT_DIR/steps/translation-model.sh"
 source "$SCRIPT_DIR/steps/hypnotix.sh"
 source "$SCRIPT_DIR/steps/keyboard-shortcuts.sh"
 source "$SCRIPT_DIR/steps/xcompose/xcompose.sh"
@@ -174,10 +174,7 @@ run_setup_steps() {
     run_step install   "Claude Desktop"      install_claude_desktop
     run_step install   "ai-memory"           install_ai_memory
     run_step install   "Discord"             install_discord
-    run_step install   "Goose CLI"           install_goose_cli
-    run_step install   "Goose Desktop"       install_goose_desktop
-    run_step configure "Goose Local Model"   configure_goose_model
-    run_step configure "Goose"               configure_goose
+    run_step configure "Translation Model" configure_translation_model
     run_step configure "ai-memory"           configure_ai_memory
     run_step install   "Hypnotix"            install_hypnotix
     run_step configure "Keyboard Shortcuts"  configure_keyboard_shortcuts

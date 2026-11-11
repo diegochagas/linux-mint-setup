@@ -33,10 +33,9 @@ install the OS itself, only what runs on top of it.
   download of all: ComfyUI plus the default model sets is about 42 GB on
   disk and needs an NVIDIA GPU. They are skipped unless `COMFYUI_DIR` is
   set in `config.sh`.
-- The [local AI agent](#local-ai-agent-goose) is the other heavy piece:
-  its default model is an ~18 GB download and needs about 24 GB of RAM
-  (GPU memory counts toward it). On smaller machines the model step is
-  skipped with a warning; pick a smaller model in `config.sh`.
+- The translation model (`qwen3-instruct-32k`) is an ~18 GB download and
+  needs about 24 GB of RAM (GPU memory counts toward it). On smaller machines
+  its step is skipped with a warning; pick a smaller model in `config.sh`.
 
 ## Step 1 - Run the Automated Setup Script
 
@@ -83,14 +82,7 @@ writes a log to the `logs/` folder.
    `Update Manager > Edit > System Snapshots > Wizard > Next > Next >
 Weekly - Keep 4 > Next > Next > Finish`.
 2. Open a new terminal and run `claude` once to sign in to Claude Code.
-3. For Goose's Browser extension, install the Open Browser Control add-on
-   in the browser Goose should control:
-   [Firefox](https://addons.mozilla.org/firefox/addon/open-browser-control/)
-   or [Chrome](https://chromewebstore.google.com/detail/open-browser-control/icicfjcgocaakibmmaejmoipckofnnpl).
-4. Optional: to let Goose read email, add an IMAP account with
-   `npx -p imap-mcp-server imap-setup`, then turn on the IMAP Email
-   extension in Goose when you need it (see [Local AI Agent](#local-ai-agent-goose)).
-5. Restart Firefox and Chrome, then set up the bookmark sync (see
+3. Restart Firefox and Chrome, then set up the bookmark sync (see
    [Bookmark Sync](#bookmark-sync-marksync)). On the first machine, click the
    MarkSync icon in Firefox, create a new sync and choose a password. Save the
    sync ID it shows and the password in your password manager: the password
@@ -216,8 +208,7 @@ downloads), passing the `COMFYUI_*` and `OLLAMA_*` settings of this
   `COMFYUI_DIR` is set**, because the models are tens of GB (about 42 GB
   with the default `COMFYUI_MODEL_SETS`); needs an NVIDIA GPU.
 - **Ollama**, the local language-model server, behind
-  [Goose](#local-ai-agent-goose) (the steps after it), comic-skills,
-  tvshow-skills and Digivice. `OLLAMA_MODELS_DIR` moves its models to
+  comic-skills, tvshow-skills, games-extractor and Digivice. `OLLAMA_MODELS_DIR` moves its models to
   another disk.
 
 See the [local-ai-setup README](https://github.com/diegochagas/local-ai-setup#readme)
@@ -386,52 +377,17 @@ It adapts Fabio Akita's 2026 process for a Linux Mint host using WinBoat,
 including the version-matching and secure-backup checks. Do not use the
 Omarchy-specific commands or paths from the original post with WinBoat.
 
-### Local AI Agent (Goose)
+### Translation Model (Ollama)
 
-A free, open-source alternative to Claude Cowork that runs entirely on
-this machine: [Goose](https://github.com/block/goose) as the agent and
-[Ollama](https://ollama.com/) serving a local model.
+Creates the long-context model games-extractor translates with.
+Ollama comes from the [Local AI step](#local-ai-models-comfyui-and-ollama).
 
-- Ollama comes from the [Local AI step](#local-ai-models-comfyui-and-ollama)
-  (local-ai-setup). It uses an NVIDIA GPU when the proprietary driver is
-  installed (Driver Manager); a model larger than the GPU memory is split
-  between GPU and CPU/RAM automatically.
-- Installs the Goose CLI in `~/.local/bin` with Block's installer
-  (AMD64 and ARM64) and, on AMD64, Goose Desktop from its latest `.deb`
-  release after checking the SHA-256 GitHub records for it.
-- Pulls the local model (`GOOSE_OLLAMA_BASE_MODEL`, by default
+- Pulls `TRANSLATION_MODEL_BASE` (by default
   Qwen3-30B-A3B-Instruct-2507, ~18 GB) and creates a copy named
-  `GOOSE_OLLAMA_MODEL` with a 32k-token context. Ollama's default 4096
-  tokens is too small: Goose's own instructions and tool descriptions
-  take most of it.
-- Writes Goose's `~/.config/goose/config.yaml`, keeping any existing
-  settings (a previous version is saved as `config.yaml.bak`):
-  - Ollama as the provider, with the model above.
-  - Smart approval mode and a 50-turn limit, only when not set yet, so
-    choices made later in Goose Desktop are kept. The limit stops a
-    stuck task instead of letting it loop.
-  - Extensions, each added only when missing:
-
-    | Extension | What it does |
-    | --- | --- |
-    | Developer | Built in: runs shell commands and reads/edits files |
-    | Browser | [Open Browser Control](https://www.npmjs.com/package/open-browser-control): controls your real Firefox or Chrome through its add-on ([manual step](#step-2---manual-post-install-steps)) |
-    | SearXNG Search | [mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng): web search through the SearXNG instance set in `GOOSE_SEARXNG_URL`; skipped when empty |
-    | IMAP Email | [imap-mcp-server](https://www.npmjs.com/package/imap-mcp-server): reads and manages email. Added **disabled**: its 40 tools use a large part of a local model's context, so turn it on only for email tasks |
-
-- Installs `steps/goose/goosehints` as `~/.config/goose/.goosehints`,
-  rules Goose reads at the start of every session: report only facts
-  it actually read, use the GitHub API instead of GitHub pages, read
-  web pages with small `browser_execute_js` snippets instead of the
-  whole DOM, and use `python3`.
-
-Run `goose session` in a folder for the terminal version or open Goose
-from the menu for the desktop app. What to expect from the default
-model on a laptop with a 6 GB GPU: about 20 tokens/s, good at file,
-shell, web search and simple browser tasks, weak at complex websites.
-`browser_execute_js` is blocked on sites with a strict
-Content-Security-Policy (GitHub, Gmail), and a small model may guess
-instead of saying it could not read something, so check its facts.
+  `TRANSLATION_MODEL_NAME` with a 32k-token context. Ollama's default 4096
+  tokens is too small for the translation prompts.
+- Skipped with a warning on machines with less than 24 GB of RAM when the
+  default base model is used.
 
 ### AI Agent Memory (ai-memory)
 
@@ -578,8 +534,6 @@ steps/              One setup step (install_* or configure_*) per file
   <name>/<name>.sh  A step that ships files, kept in the same folder:
   antimicrox/       antimicrox.sh and the profiles/ it copies
   fonts/            fonts.sh and the fonts/ it installs
-  goose/            goose.sh, goose-config.py (merges Goose's
-                    config.yaml) and the goosehints it installs
   xcompose/         xcompose.sh and the XCompose rules it merges
 ```
 
@@ -713,10 +667,6 @@ repository. Its data backup and restore chain lives in
   Agents installed later are wired on the next run of the setup, or with
   `ai-memory setup --yes`. Restart an agent's open sessions after wiring so
   they load the new hooks.
-- Goose Desktop is installed only on AMD64 systems; Ollama (through
-  local-ai-setup) and the Goose CLI on AMD64 and ARM64. The Goose Desktop package adds
-  `/usr/bin/goose` as a link to the desktop app, so the setup keeps
-  `~/.local/bin` first on the `PATH` and `goose` still runs the CLI.
 - Hypnotix is installed from APT when missing. Its `IPTV-ORG` provider uses the
   public Brazilian playlist maintained by IPTV-ORG.
 - Homelab Backup is cloned to `~/Projects/homelab-backup` and scheduled with a
