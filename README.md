@@ -204,11 +204,11 @@ downloads), passing the `COMFYUI_*` and `OLLAMA_*` settings of this
 
 - **ComfyUI** with open-weight image models (Qwen-Image-Edit, FLUX.2 klein,
   SAM 2.1, BiRefNet, LaMa), as the `comfyui` systemd user service, behind
-  GIMPhoto's AI tools, comic-skills and photo-restore. **Skipped unless
+  GIMPhoto's AI tools, image-skills and photo-restore. **Skipped unless
   `COMFYUI_DIR` is set**, because the models are tens of GB (about 42 GB
   with the default `COMFYUI_MODEL_SETS`); needs an NVIDIA GPU.
 - **Ollama**, the local language-model server, behind
-  comic-skills, tvshow-skills, games-extractor and Digivice. `OLLAMA_MODELS_DIR` moves its models to
+  image-skills, video-skills, games-extractor and Digivice. `OLLAMA_MODELS_DIR` moves its models to
   another disk.
 
 See the [local-ai-setup README](https://github.com/diegochagas/local-ai-setup#readme)

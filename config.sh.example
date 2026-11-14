@@ -162,7 +162,7 @@ TRANSLATION_MODEL_CONTEXT="32768"
 
 #
 # ComfyUI, the local AI models behind the AI tools of GIMPhoto,
-# comic-skills and photo-restore
+# image-skills and photo-restore
 #
 # Installed by local-ai-setup (the Local AI step), as a `comfyui`
 # systemd user service that GIMPhoto starts when it opens
@@ -182,7 +182,7 @@ COMFYUI_DIR=""
 # Which model sets to download, comma separated:
 #
 #   qwen  - Qwen-Image-Edit-2511, ~22 GB. Best quality;
-#           what comic-skills uses to erase text over art.
+#           what image-skills uses to erase text over art.
 #   klein - FLUX.2 klein 4B, ~12 GB. Faster, lower quality;
 #           the only one that generates images from text.
 #   sam   - SAM 2.1 large, ~450 MB. GIMPhoto's Object
